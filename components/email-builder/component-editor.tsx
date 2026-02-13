@@ -19,6 +19,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Label } from "@/components/ui/label"
 import {
   ChevronUp,
@@ -37,6 +44,7 @@ import {
   Mail,
   Phone,
   Variable,
+  MoreVertical,
 } from "lucide-react"
 
 const typeIcons: Record<string, React.ReactNode> = {
@@ -86,36 +94,43 @@ export function ComponentEditor({
         <Badge variant="secondary" className="text-[11px] font-medium px-2 py-0">
           {typeLabels[component.type]}
         </Badge>
-        <div className="ml-auto flex items-center gap-0.5">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={() => onMove("up")}
-            disabled={isFirst}
-          >
-            <ChevronUp className="h-3.5 w-3.5" />
-            <span className="sr-only">Move up</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={() => onMove("down")}
-            disabled={isLast}
-          >
-            <ChevronDown className="h-3.5 w-3.5" />
-            <span className="sr-only">Move down</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={onRemove}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            <span className="sr-only">Delete</span>
-          </Button>
+        <div className="ml-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground"
+              >
+                <MoreVertical className="h-4 w-4" />
+                <span className="sr-only">Component actions</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-36">
+              <DropdownMenuItem
+                onClick={() => onMove("up")}
+                disabled={isFirst}
+              >
+                <ChevronUp className="h-4 w-4" />
+                Move up
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => onMove("down")}
+                disabled={isLast}
+              >
+                <ChevronDown className="h-4 w-4" />
+                Move down
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={onRemove}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
