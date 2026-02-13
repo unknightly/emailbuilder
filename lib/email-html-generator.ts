@@ -150,7 +150,7 @@ function getSectionStyles(type: string): { td: string; bg: string } {
       }
     case "footer":
       return {
-        td: "font-family:Helvetica, Arial, sans-serif;font-size:12px;line-height:16px;color:#aaaaaa;padding-left:24px;padding-right:24px;",
+        td: "font-family:Helvetica, Arial, sans-serif;font-size:12px;line-height:16px;color:#aaaaaa;padding-left:24px;padding-right:24px;padding-top:8px;",
         bg: "",
       }
     default:
