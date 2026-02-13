@@ -1,4 +1,5 @@
-import type { EmailSection, EmailComponent, ParagraphLink } from "./email-types"
+import type { EmailSection, EmailComponent, ParagraphLink, EmailTheme } from "./email-types"
+import { DEFAULT_THEME } from "./email-types"
 
 function escapeHtml(text: string): string {
   return text
@@ -10,7 +11,7 @@ function escapeHtml(text: string): string {
 
 /* ─── Individual component renderers ─── */
 
-function renderHeading(component: EmailComponent, section: EmailSection): string {
+function renderHeading(component: EmailComponent, section: EmailSection, theme: EmailTheme): string {
   const level = (component.props.level as number) || 1
   const sizes: Record<number, string> = {
     1: "font-size:24px;line-height:30px;",
@@ -19,9 +20,9 @@ function renderHeading(component: EmailComponent, section: EmailSection): string
     4: "font-size:16px;line-height:22px;",
   }
   const tag = `h${level}`
-  const color = section.type === "header" ? "#ffffff" : section.type === "footer" ? "#aaaaaa" : "#333333"
+  const color = section.type === "footer" ? theme.footerTextColor : theme.headingColor
   const links = (component.props.links as ParagraphLink[]) || []
-  const inner = processRichContent(component.content, links)
+  const inner = processRichContent(component.content, links, theme)
   return `<${tag} style="margin:0;padding:0 0 12px 0;${sizes[level] || sizes[1]}font-weight:bold;color:${color};font-family:Helvetica, Arial, sans-serif;">${inner}</${tag}>`
 }
 
@@ -37,30 +38,27 @@ function buildLinkHref(link: ParagraphLink): string {
   }
 }
 
-function processRichContent(content: string, links: ParagraphLink[]): string {
-  // First escape the raw text
+function processRichContent(content: string, links: ParagraphLink[], theme: EmailTheme): string {
   let processed = escapeHtml(content)
 
-  // Replace link placeholders: [link:id] with anchor tags
   for (const link of links) {
     const placeholder = escapeHtml(`[link:${link.id}]`)
     const href = escapeHtml(buildLinkHref(link))
-    const linkHtml = `<a href="${href}" style="color:#1a73e8;text-decoration:underline;">${escapeHtml(link.text)}</a>`
+    const linkHtml = `<a href="${href}" style="color:${theme.linkColor};text-decoration:underline;">${escapeHtml(link.text)}</a>`
     processed = processed.replace(placeholder, linkHtml)
   }
 
-  // Convert \n line breaks to <br>
   processed = processed.replace(/\n/g, "<br>")
 
   return processed
 }
 
-function renderParagraph(component: EmailComponent, section: EmailSection): string {
-  const color = section.type === "footer" ? "#aaaaaa" : "#333333"
+function renderParagraph(component: EmailComponent, section: EmailSection, theme: EmailTheme): string {
+  const color = section.type === "footer" ? theme.footerTextColor : theme.bodyTextColor
   const fontSize = section.type === "footer" ? "12px" : "14px"
   const lineHeight = section.type === "footer" ? "16px" : "20px"
   const links = (component.props.links as ParagraphLink[]) || []
-  const inner = processRichContent(component.content, links)
+  const inner = processRichContent(component.content, links, theme)
   return `<p style="margin:0;padding:0 0 12px 0;font-size:${fontSize};line-height:${lineHeight};color:${color};font-family:Helvetica, Arial, sans-serif;">${inner}</p>`
 }
 
@@ -78,10 +76,10 @@ function renderImage(component: EmailComponent, section: EmailSection): string {
 </table>`
 }
 
-function renderList(component: EmailComponent, section: EmailSection): string {
+function renderList(component: EmailComponent, section: EmailSection, theme: EmailTheme): string {
   const items = (component.props.items as string[]) || []
   if (items.length === 0) return ""
-  const color = section.type === "footer" ? "#aaaaaa" : "#333333"
+  const color = section.type === "footer" ? theme.footerTextColor : theme.bodyTextColor
   const fontSize = section.type === "footer" ? "12px" : "14px"
   const lineHeight = section.type === "footer" ? "16px" : "20px"
   const listItems = items
@@ -101,11 +99,11 @@ function renderList(component: EmailComponent, section: EmailSection): string {
 </table>`
 }
 
-function renderLineItem(component: EmailComponent, section: EmailSection): string {
+function renderLineItem(component: EmailComponent, section: EmailSection, theme: EmailTheme): string {
   const label = (component.props.label as string) || ""
   const value = (component.props.value as string) || ""
-  const color = section.type === "footer" ? "#aaaaaa" : "#333333"
-  return `<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-bottom:1px solid #e0e0e0;">
+  const color = section.type === "footer" ? theme.footerTextColor : theme.bodyTextColor
+  return `<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-bottom:1px solid ${theme.lineItemBorderColor};">
   <tr>
     <td style="font-size:14px;line-height:20px;color:${color};font-family:Helvetica, Arial, sans-serif;padding:8px 0;" align="left">${escapeHtml(label)}</td>
     <td style="font-size:14px;line-height:20px;color:${color};font-weight:bold;font-family:Helvetica, Arial, sans-serif;padding:8px 0;" align="right">${escapeHtml(value)}</td>
@@ -117,18 +115,18 @@ function renderHtmlBlock(component: EmailComponent): string {
   return component.content
 }
 
-function renderComponent(component: EmailComponent, section: EmailSection): string {
+function renderComponent(component: EmailComponent, section: EmailSection, theme: EmailTheme): string {
   switch (component.type) {
     case "heading":
-      return renderHeading(component, section)
+      return renderHeading(component, section, theme)
     case "paragraph":
-      return renderParagraph(component, section)
+      return renderParagraph(component, section, theme)
     case "image":
       return renderImage(component, section)
     case "list":
-      return renderList(component, section)
+      return renderList(component, section, theme)
     case "line-item":
-      return renderLineItem(component, section)
+      return renderLineItem(component, section, theme)
     case "html":
       return renderHtmlBlock(component)
     default:
@@ -138,37 +136,37 @@ function renderComponent(component: EmailComponent, section: EmailSection): stri
 
 /* ─── Section rendering ─── */
 
-function getSectionStyles(type: string): { td: string; bg: string } {
+function getSectionStyles(type: string, theme: EmailTheme): { td: string; bg: string } {
   switch (type) {
     case "header":
       return {
-        td: "font-family:Helvetica, Arial, sans-serif;font-size:14px;color:#333333;padding:24px;",
-        bg: "#FFFFFF",
+        td: `font-family:Helvetica, Arial, sans-serif;font-size:14px;color:${theme.bodyTextColor};padding:24px;`,
+        bg: theme.headerBackground,
       }
     case "body":
       return {
         td: "padding-left:24px;padding-right:24px;padding-top:12px;padding-bottom:12px;",
-        bg: "#FFFFFF",
+        bg: theme.bodyBackground,
       }
     case "footer":
       return {
-        td: "font-family:Helvetica, Arial, sans-serif;font-size:12px;line-height:16px;color:#aaaaaa;padding-left:24px;padding-right:24px;padding-top:8px;",
-        bg: "",
+        td: `font-family:Helvetica, Arial, sans-serif;font-size:12px;line-height:16px;color:${theme.footerTextColor};padding-left:24px;padding-right:24px;padding-top:8px;`,
+        bg: theme.footerBackground,
       }
     default:
       return {
         td: "padding:24px;",
-        bg: "#FFFFFF",
+        bg: theme.containerBackground,
       }
   }
 }
 
-function renderSection(section: EmailSection): string {
+function renderSection(section: EmailSection, theme: EmailTheme): string {
   if (section.components.length === 0) return ""
 
-  const styles = getSectionStyles(section.type)
+  const styles = getSectionStyles(section.type, theme)
   const componentsHtml = section.components
-    .map((c) => renderComponent(c, section))
+    .map((c) => renderComponent(c, section, theme))
     .join("\n          ")
 
   const bgAttr = styles.bg ? ` bgcolor="${styles.bg}"` : ""
@@ -179,10 +177,9 @@ function renderSection(section: EmailSection): string {
         ? ' class="container-padding footer-text"'
         : ' class="container-padding header"'
 
-  // Body content gets wrapped in a body-text div matching the template
   const inner =
     section.type === "body"
-      ? `\n<div class="body-text" style="font-family:Helvetica, Arial, sans-serif;font-size:14px;text-align:left;color:#333333">\n\n${componentsHtml}\n\n</div>\n`
+      ? `\n<div class="body-text" style="font-family:Helvetica, Arial, sans-serif;font-size:14px;text-align:left;color:${theme.bodyTextColor}">\n\n${componentsHtml}\n\n</div>\n`
       : `\n          ${componentsHtml}\n        `
 
   return `        <tr>
@@ -193,8 +190,8 @@ function renderSection(section: EmailSection): string {
 
 /* ─── Full email generation ─── */
 
-export function generateEmailHTML(sections: EmailSection[]): string {
-  const sectionsHtml = sections.map((s) => renderSection(s)).join("\n")
+export function generateEmailHTML(sections: EmailSection[], theme: EmailTheme = DEFAULT_THEME): string {
+  const sectionsHtml = sections.map((s) => renderSection(s, theme)).join("\n")
 
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html lang="en">
@@ -229,7 +226,7 @@ table td {
 }
 .ReadMsgBody {
   width: 100%;
-  background-color: #ebebeb;
+  background-color: ${theme.outerBackground};
 }
 table {
   mso-table-lspace: 0pt;
@@ -255,23 +252,23 @@ img {
   }
 }
 .ios-footer a {
-  color: #aaaaaa !important;
+  color: ${theme.footerTextColor} !important;
   text-decoration: underline;
 }
 </style>
 </head>
  
-<body bgcolor="#F0F0F0" leftmargin="0" topmargin="0" marginwidth="0" marginheight="0">
+<body bgcolor="${theme.outerBackground}" leftmargin="0" topmargin="0" marginwidth="0" marginheight="0">
  
-<!-- 100% background wrapper (grey background) -->
-<table border="0" width="100%" height="100%" cellpadding="0" cellspacing="0" bgcolor="#F0F0F0">
+<!-- 100% background wrapper -->
+<table border="0" width="100%" height="100%" cellpadding="0" cellspacing="0" bgcolor="${theme.outerBackground}">
   <tr>
-    <td align="center" valign="top" bgcolor="#F0F0F0" style="background-color: #F0F0F0;">
+    <td align="center" valign="top" bgcolor="${theme.outerBackground}" style="background-color: ${theme.outerBackground};">
  
       <br>
  
-      <!-- 600px container (white background) -->
-      <table border="0" width="600" cellpadding="0" cellspacing="0" class="container" style="width:600px;max-width:600px">
+      <!-- 600px container -->
+      <table border="0" width="600" cellpadding="0" cellspacing="0" class="container" style="width:600px;max-width:600px;background-color:${theme.containerBackground};">
 ${sectionsHtml}
       </table>
 <!--/600px container -->

@@ -1,3 +1,29 @@
+export interface EmailTheme {
+  outerBackground: string
+  containerBackground: string
+  headerBackground: string
+  bodyBackground: string
+  footerBackground: string
+  headingColor: string
+  bodyTextColor: string
+  footerTextColor: string
+  linkColor: string
+  lineItemBorderColor: string
+}
+
+export const DEFAULT_THEME: EmailTheme = {
+  outerBackground: "#F0F0F0",
+  containerBackground: "#FFFFFF",
+  headerBackground: "#FFFFFF",
+  bodyBackground: "#FFFFFF",
+  footerBackground: "#F0F0F0",
+  headingColor: "#333333",
+  bodyTextColor: "#333333",
+  footerTextColor: "#aaaaaa",
+  linkColor: "#1a73e8",
+  lineItemBorderColor: "#e0e0e0",
+}
+
 export type ComponentType =
   | "heading"
   | "paragraph"

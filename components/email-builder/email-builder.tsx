@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useMemo, useCallback, useRef } from "react"
-import type { EmailSection, EmailComponent, ComponentType } from "@/lib/email-types"
-import { createDefaultSections, createComponent } from "@/lib/email-types"
+import type { EmailSection, EmailComponent, ComponentType, EmailTheme } from "@/lib/email-types"
+import { createDefaultSections, createComponent, DEFAULT_THEME } from "@/lib/email-types"
 import { generateEmailHTML } from "@/lib/email-html-generator"
 import { BuilderPanel } from "./builder-panel"
 import { PreviewPanel } from "./preview-panel"
@@ -16,6 +16,7 @@ import { Mail, Download, Upload } from "lucide-react"
 
 export function EmailBuilder() {
   const [sections, setSections] = useState<EmailSection[]>(createDefaultSections)
+  const [theme, setTheme] = useState<EmailTheme>(() => ({ ...DEFAULT_THEME }))
 
   const addComponent = useCallback((sectionId: string, type: ComponentType) => {
     setSections((prev) =>
@@ -88,10 +89,10 @@ export function EmailBuilder() {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const html = useMemo(() => generateEmailHTML(sections), [sections])
+  const html = useMemo(() => generateEmailHTML(sections, theme), [sections, theme])
 
   const handleDownload = useCallback(() => {
-    const data = JSON.stringify(sections, null, 2)
+    const data = JSON.stringify({ sections, theme }, null, 2)
     const blob = new Blob([data], { type: "application/json" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
@@ -111,7 +112,11 @@ export function EmailBuilder() {
       reader.onload = (event) => {
         try {
           const parsed = JSON.parse(event.target?.result as string)
-          if (Array.isArray(parsed) && parsed.every((s) => s.id && s.type && s.label && Array.isArray(s.components))) {
+          // Support new format { sections, theme } and legacy array format
+          if (parsed && parsed.sections && Array.isArray(parsed.sections)) {
+            setSections(parsed.sections as EmailSection[])
+            if (parsed.theme) setTheme({ ...DEFAULT_THEME, ...parsed.theme } as EmailTheme)
+          } else if (Array.isArray(parsed) && parsed.every((s: Record<string, unknown>) => s.id && s.type && s.label && Array.isArray(s.components))) {
             setSections(parsed as EmailSection[])
           }
         } catch {
@@ -175,6 +180,8 @@ export function EmailBuilder() {
           <ResizablePanel defaultSize={42} minSize={30} maxSize={60}>
             <BuilderPanel
               sections={sections}
+              theme={theme}
+              onThemeChange={setTheme}
               onAddComponent={addComponent}
               onUpdateComponent={updateComponent}
               onRemoveComponent={removeComponent}

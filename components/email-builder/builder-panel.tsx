@@ -1,11 +1,14 @@
 "use client"
 
-import type { EmailSection, EmailComponent, ComponentType } from "@/lib/email-types"
+import type { EmailSection, EmailComponent, ComponentType, EmailTheme } from "@/lib/email-types"
 import { SectionEditor } from "./section-editor"
+import { ThemeEditor } from "./theme-editor"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface BuilderPanelProps {
   sections: EmailSection[]
+  theme: EmailTheme
+  onThemeChange: (theme: EmailTheme) => void
   onAddComponent: (sectionId: string, type: ComponentType) => void
   onUpdateComponent: (sectionId: string, componentId: string, updates: Partial<EmailComponent>) => void
   onRemoveComponent: (sectionId: string, componentId: string) => void
@@ -15,6 +18,8 @@ interface BuilderPanelProps {
 
 export function BuilderPanel({
   sections,
+  theme,
+  onThemeChange,
   onAddComponent,
   onUpdateComponent,
   onRemoveComponent,
@@ -28,6 +33,7 @@ export function BuilderPanel({
       </div>
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-3 p-4">
+          <ThemeEditor theme={theme} onChange={onThemeChange} />
           {sections.map((section) => (
             <SectionEditor
               key={section.id}
