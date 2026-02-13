@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useMemo } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Eye, Code, Copy, Check } from "lucide-react"
+import { Eye, Code, Copy, Check, Braces } from "lucide-react"
 
 interface PreviewPanelProps {
   html: string
@@ -11,6 +11,16 @@ interface PreviewPanelProps {
 
 export function PreviewPanel({ html }: PreviewPanelProps) {
   const [copied, setCopied] = useState(false)
+  const [copiedEntities, setCopiedEntities] = useState(false)
+
+  const entitiesHtml = useMemo(() => {
+    return html
+      .replace(/&/g, "\x26amp;")
+      .replace(/</g, "\x26lt;")
+      .replace(/>/g, "\x26gt;")
+      .replace(/"/g, "\x26quot;")
+      .replace(/'/g, "\x26#39;")
+  }, [html])
 
   const copyToClipboard = useCallback(async () => {
     try {
@@ -30,6 +40,23 @@ export function PreviewPanel({ html }: PreviewPanelProps) {
     }
   }, [html])
 
+  const copyEntitiesToClipboard = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(entitiesHtml)
+      setCopiedEntities(true)
+      setTimeout(() => setCopiedEntities(false), 2000)
+    } catch {
+      const textarea = document.createElement("textarea")
+      textarea.value = entitiesHtml
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand("copy")
+      document.body.removeChild(textarea)
+      setCopiedEntities(true)
+      setTimeout(() => setCopiedEntities(false), 2000)
+    }
+  }, [entitiesHtml])
+
   return (
     <div className="flex h-full flex-col">
       <Tabs defaultValue="preview" className="flex h-full flex-col">
@@ -42,6 +69,10 @@ export function PreviewPanel({ html }: PreviewPanelProps) {
             <TabsTrigger value="html" className="text-xs gap-1.5 px-3">
               <Code className="h-3.5 w-3.5" />
               HTML
+            </TabsTrigger>
+            <TabsTrigger value="entities" className="text-xs gap-1.5 px-3">
+              <Braces className="h-3.5 w-3.5" />
+              Entities
             </TabsTrigger>
           </TabsList>
           <Button
@@ -82,6 +113,34 @@ export function PreviewPanel({ html }: PreviewPanelProps) {
           <div className="h-full overflow-auto bg-[hsl(var(--muted))]">
             <pre className="p-4 text-xs leading-relaxed font-mono text-foreground whitespace-pre-wrap break-words">
               {html}
+            </pre>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="entities" className="flex-1 m-0 overflow-hidden">
+          <div className="h-full overflow-auto bg-[hsl(var(--muted))]">
+            <div className="flex justify-end p-2 border-b">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs gap-1.5"
+                onClick={copyEntitiesToClipboard}
+              >
+                {copiedEntities ? (
+                  <>
+                    <Check className="h-3 w-3" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3 w-3" />
+                    Copy Entities
+                  </>
+                )}
+              </Button>
+            </div>
+            <pre className="p-4 text-xs leading-relaxed font-mono text-foreground whitespace-pre-wrap break-words">
+              {entitiesHtml}
             </pre>
           </div>
         </TabsContent>
