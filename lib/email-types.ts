@@ -28,9 +28,75 @@ export function createId(): string {
 
 export function createDefaultSections(): EmailSection[] {
   return [
-    { id: createId(), type: "header", label: "Header", components: [] },
-    { id: createId(), type: "body", label: "Body", components: [] },
-    { id: createId(), type: "footer", label: "Footer", components: [] },
+    {
+      id: createId(),
+      type: "header",
+      label: "Header",
+      components: [
+        {
+          id: createId(),
+          type: "image",
+          content: "https://placehold.co/204x67/ffffff/333333?text=Your+Logo",
+          props: { alt: "Company Logo", width: 204 },
+        },
+      ],
+    },
+    {
+      id: createId(),
+      type: "body",
+      label: "Body",
+      components: [
+        {
+          id: createId(),
+          type: "paragraph",
+          content: "Dear $FirstName,",
+          props: {},
+        },
+        {
+          id: createId(),
+          type: "paragraph",
+          content: "Thank you for your recent enquiry. We are currently reviewing your request and will be in touch shortly.",
+          props: {},
+        },
+        {
+          id: createId(),
+          type: "heading",
+          content: "What happens next?",
+          props: { level: 3 },
+        },
+        {
+          id: createId(),
+          type: "paragraph",
+          content: "Our team will review the information you have provided. You can track the status of your request by logging into your account.",
+          props: {},
+        },
+        {
+          id: createId(),
+          type: "paragraph",
+          content: "Sincerely,\nThe Team",
+          props: {},
+        },
+      ],
+    },
+    {
+      id: createId(),
+      type: "footer",
+      label: "Footer",
+      components: [
+        {
+          id: createId(),
+          type: "image",
+          content: "https://placehold.co/36x14/f0f0f0/aaaaaa?text=Logo",
+          props: { alt: "Footer Logo", width: 36 },
+        },
+        {
+          id: createId(),
+          type: "paragraph",
+          content: "The way in which we collect, use, store, disclose and secure information is set out in our Privacy Policy, available free of charge on request.",
+          props: {},
+        },
+      ],
+    },
   ]
 }
 
@@ -38,14 +104,14 @@ export function createComponent(type: ComponentType): EmailComponent {
   const id = createId()
   switch (type) {
     case "heading":
-      return { id, type, content: "Heading text", props: { level: 1 } }
+      return { id, type, content: "Heading text", props: { level: 3 } }
     case "paragraph":
       return { id, type, content: "Enter your paragraph text here...", props: {} }
     case "image":
       return {
         id,
         type,
-        content: "https://placehold.co/600x200/e2e8f0/64748b?text=Your+Image",
+        content: "https://placehold.co/600x200/f0f0f0/333333?text=Your+Image",
         props: { alt: "Image description", width: 600 },
       }
     case "list":
