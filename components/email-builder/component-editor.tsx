@@ -102,7 +102,41 @@ export function ComponentEditor({
         <Badge variant="secondary" className="text-[11px] font-medium px-2 py-0">
           {typeLabels[component.type]}
         </Badge>
-        <div className="ml-auto">
+        {/* Inline actions - visible on md+ */}
+        <div className="ml-auto hidden md:flex items-center gap-0.5">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={() => onMove("up")}
+            disabled={isFirst}
+          >
+            <ChevronUp className="h-3.5 w-3.5" />
+            <span className="sr-only">Move up</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={() => onMove("down")}
+            disabled={isLast}
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+            <span className="sr-only">Move down</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={onRemove}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            <span className="sr-only">Delete</span>
+          </Button>
+        </div>
+
+        {/* Kebab menu - visible on small screens only */}
+        <div className="ml-auto md:hidden">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground">
