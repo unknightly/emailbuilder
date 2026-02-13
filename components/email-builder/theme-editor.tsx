@@ -54,23 +54,11 @@ export function ThemeEditor({ theme, onChange }: ThemeEditorProps) {
 
   return (
     <Collapsible>
-      <div className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2">
-        <CollapsibleTrigger className="flex flex-1 items-center gap-2 text-left">
-          <Palette className="h-4 w-4 text-muted-foreground shrink-0" />
-          <span className="text-sm font-medium">Theme Colours</span>
-          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground ml-auto transition-transform [[data-state=open]_&]:rotate-180" />
-        </CollapsibleTrigger>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-muted-foreground shrink-0"
-          onClick={resetTheme}
-          title="Reset to defaults"
-        >
-          <RotateCcw className="h-3.5 w-3.5" />
-          <span className="sr-only">Reset theme to defaults</span>
-        </Button>
-      </div>
+      <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-lg border bg-card px-3 py-2 text-left">
+        <Palette className="h-4 w-4 text-muted-foreground shrink-0" />
+        <span className="text-sm font-medium">Theme Colours</span>
+        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground ml-auto transition-transform [[data-state=open]_&]:rotate-180" />
+      </CollapsibleTrigger>
 
       <CollapsibleContent>
         <div className="flex flex-col gap-4 rounded-b-lg border border-t-0 bg-card px-3 py-3">
@@ -112,6 +100,16 @@ export function ThemeEditor({ theme, onChange }: ThemeEditorProps) {
               </div>
             </div>
           ))}
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full text-xs gap-1.5 mt-1"
+            onClick={resetTheme}
+          >
+            <RotateCcw className="h-3 w-3" />
+            Reset to defaults
+          </Button>
         </div>
       </CollapsibleContent>
     </Collapsible>
