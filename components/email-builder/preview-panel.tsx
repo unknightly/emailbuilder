@@ -78,17 +78,12 @@ export function PreviewPanel({ html }: PreviewPanelProps) {
         </div>
 
         <TabsContent value="preview" className="flex-1 m-0 overflow-hidden">
-          <div className="h-full bg-muted/30 p-4 overflow-auto">
-            <div className="mx-auto max-w-[660px]">
-              <iframe
-                srcDoc={html}
-                title="Email Preview"
-                className="w-full rounded-md border bg-background shadow-sm"
-                style={{ minHeight: "600px", height: "100%" }}
-                sandbox="allow-same-origin"
-              />
-            </div>
-          </div>
+          <iframe
+            srcDoc={html}
+            title="Email Preview"
+            className="h-full w-full border-0 bg-background"
+            sandbox="allow-same-origin"
+          />
         </TabsContent>
 
         <TabsContent value="html" className="flex-1 m-0 overflow-hidden">
