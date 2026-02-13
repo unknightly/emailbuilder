@@ -6,6 +6,24 @@ export type ComponentType =
   | "line-item"
   | "html"
 
+export type LinkType = "web" | "email" | "telephone"
+
+export interface ParagraphLink {
+  id: string
+  text: string
+  url: string
+  linkType: LinkType
+}
+
+export const TEMPLATE_VARIABLES = [
+  "$FirstName",
+  "$LastName",
+  "$PolicyOwnerNumber",
+  "$ApplicationReference",
+] as const
+
+export type TemplateVariable = (typeof TEMPLATE_VARIABLES)[number]
+
 export interface EmailComponent {
   id: string
   type: ComponentType

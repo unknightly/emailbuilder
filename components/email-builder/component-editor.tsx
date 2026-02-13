@@ -1,6 +1,8 @@
 "use client"
 
-import type { EmailComponent } from "@/lib/email-types"
+import { useRef, useCallback } from "react"
+import type { EmailComponent, ParagraphLink, LinkType } from "@/lib/email-types"
+import { TEMPLATE_VARIABLES, createId } from "@/lib/email-types"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
@@ -13,6 +15,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Label } from "@/components/ui/label"
+import {
   ChevronUp,
   ChevronDown,
   Trash2,
@@ -24,6 +32,11 @@ import {
   Code,
   Plus,
   X,
+  Link,
+  Globe,
+  Mail,
+  Phone,
+  Variable,
 } from "lucide-react"
 
 const typeIcons: Record<string, React.ReactNode> = {
@@ -136,11 +149,10 @@ export function ComponentEditor({
         )}
 
         {component.type === "paragraph" && (
-          <Textarea
-            value={component.content}
-            onChange={(e) => onUpdate({ content: e.target.value })}
-            placeholder="Paragraph text..."
-            className="min-h-[80px] text-sm resize-y"
+          <ParagraphEditor
+            component={component}
+            onUpdate={onUpdate}
+            updateProps={updateProps}
           />
         )}
 
@@ -203,6 +215,216 @@ export function ComponentEditor({
     </div>
   )
 }
+
+/* ─── Paragraph Editor with links + variables ─── */
+
+const linkTypeIcons: Record<LinkType, React.ReactNode> = {
+  web: <Globe className="h-3 w-3" />,
+  email: <Mail className="h-3 w-3" />,
+  telephone: <Phone className="h-3 w-3" />,
+}
+
+const linkTypePlaceholders: Record<LinkType, string> = {
+  web: "https://example.com",
+  email: "hello@example.com",
+  telephone: "+61 400 000 000",
+}
+
+function ParagraphEditor({
+  component,
+  onUpdate,
+  updateProps,
+}: {
+  component: EmailComponent
+  onUpdate: (updates: Partial<EmailComponent>) => void
+  updateProps: (key: string, value: unknown) => void
+}) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const links = (component.props.links as ParagraphLink[]) || []
+
+  const insertAtCursor = useCallback(
+    (text: string) => {
+      const el = textareaRef.current
+      if (!el) {
+        onUpdate({ content: component.content + text })
+        return
+      }
+      const start = el.selectionStart
+      const end = el.selectionEnd
+      const before = component.content.slice(0, start)
+      const after = component.content.slice(end)
+      onUpdate({ content: before + text + after })
+      // Restore cursor after the inserted text
+      requestAnimationFrame(() => {
+        el.selectionStart = el.selectionEnd = start + text.length
+        el.focus()
+      })
+    },
+    [component.content, onUpdate]
+  )
+
+  const addLink = useCallback(
+    (linkType: LinkType) => {
+      const id = createId()
+      const newLink: ParagraphLink = {
+        id,
+        text: linkType === "telephone" ? "Call us" : linkType === "email" ? "Email us" : "Click here",
+        url: "",
+        linkType,
+      }
+      const updatedLinks = [...links, newLink]
+      updateProps("links", updatedLinks)
+      insertAtCursor(`[link:${id}]`)
+    },
+    [links, updateProps, insertAtCursor]
+  )
+
+  const updateLink = useCallback(
+    (linkId: string, updates: Partial<ParagraphLink>) => {
+      const updatedLinks = links.map((l) => (l.id === linkId ? { ...l, ...updates } : l))
+      updateProps("links", updatedLinks)
+    },
+    [links, updateProps]
+  )
+
+  const removeLink = useCallback(
+    (linkId: string) => {
+      const updatedLinks = links.filter((l) => l.id !== linkId)
+      updateProps("links", updatedLinks)
+      // Also remove the placeholder from content
+      const placeholder = `[link:${linkId}]`
+      if (component.content.includes(placeholder)) {
+        onUpdate({ content: component.content.replace(placeholder, "") })
+      }
+    },
+    [links, updateProps, component.content, onUpdate]
+  )
+
+  return (
+    <div className="flex flex-col gap-2">
+      {/* Toolbar */}
+      <div className="flex items-center gap-1 flex-wrap">
+        {/* Variable insertion */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5">
+              <Variable className="h-3 w-3" />
+              Variable
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-52 p-1" align="start">
+            <div className="flex flex-col">
+              {TEMPLATE_VARIABLES.map((v) => (
+                <button
+                  key={v}
+                  className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent text-left font-mono"
+                  onClick={() => insertAtCursor(v)}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Link insertion */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5">
+              <Link className="h-3 w-3" />
+              Link
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-44 p-1" align="start">
+            <div className="flex flex-col">
+              <button
+                className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent text-left"
+                onClick={() => addLink("web")}
+              >
+                <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+                Web link
+              </button>
+              <button
+                className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent text-left"
+                onClick={() => addLink("email")}
+              >
+                <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                Email link
+              </button>
+              <button
+                className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent text-left"
+                onClick={() => addLink("telephone")}
+              >
+                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                Telephone link
+              </button>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {/* Textarea */}
+      <Textarea
+        ref={textareaRef}
+        value={component.content}
+        onChange={(e) => onUpdate({ content: e.target.value })}
+        placeholder="Paragraph text... (use Enter for line breaks)"
+        className="min-h-[80px] text-sm resize-y font-mono"
+      />
+
+      {/* Active links list */}
+      {links.length > 0 && (
+        <div className="flex flex-col gap-1.5 rounded-md border bg-muted/50 p-2">
+          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Links</span>
+          {links.map((link) => (
+            <div key={link.id} className="flex flex-col gap-1 rounded-md border bg-card p-2">
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground">{linkTypeIcons[link.linkType]}</span>
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                  {link.linkType}
+                </Badge>
+                <code className="text-[10px] text-muted-foreground ml-auto font-mono">[link:{link.id}]</code>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                  onClick={() => removeLink(link.id)}
+                >
+                  <X className="h-3 w-3" />
+                  <span className="sr-only">Remove link</span>
+                </Button>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="flex flex-col gap-1 flex-1">
+                  <Label className="text-[10px] text-muted-foreground">Display text</Label>
+                  <Input
+                    value={link.text}
+                    onChange={(e) => updateLink(link.id, { text: e.target.value })}
+                    className="h-7 text-xs"
+                    placeholder="Link text"
+                  />
+                </div>
+                <div className="flex flex-col gap-1 flex-1">
+                  <Label className="text-[10px] text-muted-foreground">
+                    {link.linkType === "email" ? "Email" : link.linkType === "telephone" ? "Phone" : "URL"}
+                  </Label>
+                  <Input
+                    value={link.url}
+                    onChange={(e) => updateLink(link.id, { url: e.target.value })}
+                    className="h-7 text-xs font-mono"
+                    placeholder={linkTypePlaceholders[link.linkType]}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ─── List Editor ─── */
 
 function ListEditor({
   items,

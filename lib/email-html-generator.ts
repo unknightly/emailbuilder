@@ -1,4 +1,4 @@
-import type { EmailSection, EmailComponent } from "./email-types"
+import type { EmailSection, EmailComponent, ParagraphLink } from "./email-types"
 
 function escapeHtml(text: string): string {
   return text
@@ -23,11 +23,43 @@ function renderHeading(component: EmailComponent, section: EmailSection): string
   return `<${tag} style="margin:0;padding:0 0 12px 0;${sizes[level] || sizes[1]}font-weight:bold;color:${color};font-family:Helvetica, Arial, sans-serif;">${escapeHtml(component.content)}</${tag}>`
 }
 
+function buildLinkHref(link: ParagraphLink): string {
+  switch (link.linkType) {
+    case "email":
+      return `mailto:${link.url}`
+    case "telephone":
+      return `tel:${link.url.replace(/\s/g, "")}`
+    case "web":
+    default:
+      return link.url.startsWith("http") ? link.url : `https://${link.url}`
+  }
+}
+
+function processParagraphContent(content: string, links: ParagraphLink[]): string {
+  // First escape the raw text
+  let processed = escapeHtml(content)
+
+  // Replace link placeholders: [link:id] with anchor tags
+  for (const link of links) {
+    const placeholder = escapeHtml(`[link:${link.id}]`)
+    const href = escapeHtml(buildLinkHref(link))
+    const linkHtml = `<a href="${href}" style="color:#1a73e8;text-decoration:underline;">${escapeHtml(link.text)}</a>`
+    processed = processed.replace(placeholder, linkHtml)
+  }
+
+  // Convert \n line breaks to <br>
+  processed = processed.replace(/\n/g, "<br>")
+
+  return processed
+}
+
 function renderParagraph(component: EmailComponent, section: EmailSection): string {
   const color = section.type === "footer" ? "#aaaaaa" : "#333333"
   const fontSize = section.type === "footer" ? "12px" : "14px"
   const lineHeight = section.type === "footer" ? "16px" : "20px"
-  return `<p style="margin:0;padding:0 0 12px 0;font-size:${fontSize};line-height:${lineHeight};color:${color};font-family:Helvetica, Arial, sans-serif;">${escapeHtml(component.content)}</p>`
+  const links = (component.props.links as ParagraphLink[]) || []
+  const inner = processParagraphContent(component.content, links)
+  return `<p style="margin:0;padding:0 0 12px 0;font-size:${fontSize};line-height:${lineHeight};color:${color};font-family:Helvetica, Arial, sans-serif;">${inner}</p>`
 }
 
 function renderImage(component: EmailComponent, section: EmailSection): string {
