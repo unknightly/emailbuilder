@@ -450,6 +450,15 @@ export default function ArchitecturePage() {
             ))}
           </div>
         </div>
+        {/* Navigation */}
+        <div className="mt-10 flex justify-between items-center py-4 border-t" style={{ borderColor: BORDER }}>
+          <a href="/" className="text-xs font-medium hover:underline" style={{ color: ACCENT }}>
+            Back to Email Builder
+          </a>
+          <a href="/architecture/schema" className="text-xs font-medium hover:underline" style={{ color: ACCENT }}>
+            JSON Schema Breakdown
+          </a>
+        </div>
       </main>
     </div>
   )
