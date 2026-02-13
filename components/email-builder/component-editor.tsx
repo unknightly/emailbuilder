@@ -137,30 +137,11 @@ export function ComponentEditor({
       {/* Editor body */}
       <div className="flex flex-col gap-2">
         {component.type === "heading" && (
-          <>
-            <div className="flex items-center gap-2">
-              <Select
-                value={String(component.props.level || 1)}
-                onValueChange={(val) => updateProps("level", Number(val))}
-              >
-                <SelectTrigger className="w-20 h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">H1</SelectItem>
-                  <SelectItem value="2">H2</SelectItem>
-                  <SelectItem value="3">H3</SelectItem>
-                  <SelectItem value="4">H4</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input
-                value={component.content}
-                onChange={(e) => onUpdate({ content: e.target.value })}
-                placeholder="Heading text"
-                className="h-8 text-sm"
-              />
-            </div>
-          </>
+          <HeadingEditor
+            component={component}
+            onUpdate={onUpdate}
+            updateProps={updateProps}
+          />
         )}
 
         {component.type === "paragraph" && (
@@ -231,7 +212,7 @@ export function ComponentEditor({
   )
 }
 
-/* ─── Paragraph Editor with links + variables ─── */
+/* ─── Shared Rich Text Toolbar + Links Editor ─── */
 
 const linkTypeIcons: Record<LinkType, React.ReactNode> = {
   web: <Globe className="h-3 w-3" />,
@@ -245,37 +226,37 @@ const linkTypePlaceholders: Record<LinkType, string> = {
   telephone: "+61 400 000 000",
 }
 
-function ParagraphEditor({
+function useRichTextEditor({
   component,
   onUpdate,
   updateProps,
+  inputRef,
 }: {
   component: EmailComponent
   onUpdate: (updates: Partial<EmailComponent>) => void
   updateProps: (key: string, value: unknown) => void
+  inputRef: React.RefObject<HTMLTextAreaElement | HTMLInputElement | null>
 }) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const links = (component.props.links as ParagraphLink[]) || []
 
   const insertAtCursor = useCallback(
     (text: string) => {
-      const el = textareaRef.current
+      const el = inputRef.current
       if (!el) {
         onUpdate({ content: component.content + text })
         return
       }
-      const start = el.selectionStart
-      const end = el.selectionEnd
+      const start = el.selectionStart ?? component.content.length
+      const end = el.selectionEnd ?? component.content.length
       const before = component.content.slice(0, start)
       const after = component.content.slice(end)
       onUpdate({ content: before + text + after })
-      // Restore cursor after the inserted text
       requestAnimationFrame(() => {
         el.selectionStart = el.selectionEnd = start + text.length
         el.focus()
       })
     },
-    [component.content, onUpdate]
+    [component.content, onUpdate, inputRef]
   )
 
   const addLink = useCallback(
@@ -287,8 +268,7 @@ function ParagraphEditor({
         url: "",
         linkType,
       }
-      const updatedLinks = [...links, newLink]
-      updateProps("links", updatedLinks)
+      updateProps("links", [...links, newLink])
       insertAtCursor(`[link:${id}]`)
     },
     [links, updateProps, insertAtCursor]
@@ -296,17 +276,14 @@ function ParagraphEditor({
 
   const updateLink = useCallback(
     (linkId: string, updates: Partial<ParagraphLink>) => {
-      const updatedLinks = links.map((l) => (l.id === linkId ? { ...l, ...updates } : l))
-      updateProps("links", updatedLinks)
+      updateProps("links", links.map((l) => (l.id === linkId ? { ...l, ...updates } : l)))
     },
     [links, updateProps]
   )
 
   const removeLink = useCallback(
     (linkId: string) => {
-      const updatedLinks = links.filter((l) => l.id !== linkId)
-      updateProps("links", updatedLinks)
-      // Also remove the placeholder from content
+      updateProps("links", links.filter((l) => l.id !== linkId))
       const placeholder = `[link:${linkId}]`
       if (component.content.includes(placeholder)) {
         onUpdate({ content: component.content.replace(placeholder, "") })
@@ -315,70 +292,209 @@ function ParagraphEditor({
     [links, updateProps, component.content, onUpdate]
   )
 
+  return { links, insertAtCursor, addLink, updateLink, removeLink }
+}
+
+function RichTextToolbar({
+  insertAtCursor,
+  addLink,
+}: {
+  insertAtCursor: (text: string) => void
+  addLink: (linkType: LinkType) => void
+}) {
+  return (
+    <div className="flex items-center gap-1 flex-wrap">
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5">
+            <Variable className="h-3 w-3" />
+            Variable
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-52 p-1" align="start">
+          <div className="flex flex-col">
+            {TEMPLATE_VARIABLES.map((v) => (
+              <button
+                key={v}
+                className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent text-left font-mono"
+                onClick={() => insertAtCursor(v)}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5">
+            <Link className="h-3 w-3" />
+            Link
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-44 p-1" align="start">
+          <div className="flex flex-col">
+            <button
+              className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent text-left"
+              onClick={() => addLink("web")}
+            >
+              <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+              Web link
+            </button>
+            <button
+              className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent text-left"
+              onClick={() => addLink("email")}
+            >
+              <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+              Email link
+            </button>
+            <button
+              className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent text-left"
+              onClick={() => addLink("telephone")}
+            >
+              <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+              Telephone link
+            </button>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  )
+}
+
+function LinksEditor({
+  links,
+  updateLink,
+  removeLink,
+}: {
+  links: ParagraphLink[]
+  updateLink: (linkId: string, updates: Partial<ParagraphLink>) => void
+  removeLink: (linkId: string) => void
+}) {
+  if (links.length === 0) return null
+
+  return (
+    <div className="flex flex-col gap-1.5 rounded-md border bg-muted/50 p-2">
+      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Links</span>
+      {links.map((link) => (
+        <div key={link.id} className="flex flex-col gap-1 rounded-md border bg-card p-2">
+          <div className="flex items-center gap-1.5">
+            <span className="text-muted-foreground">{linkTypeIcons[link.linkType]}</span>
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+              {link.linkType}
+            </Badge>
+            <code className="text-[10px] text-muted-foreground ml-auto font-mono">[link:{link.id}]</code>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-muted-foreground hover:text-destructive"
+              onClick={() => removeLink(link.id)}
+            >
+              <X className="h-3 w-3" />
+              <span className="sr-only">Remove link</span>
+            </Button>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="flex flex-col gap-1 flex-1">
+              <Label className="text-[10px] text-muted-foreground">Display text</Label>
+              <Input
+                value={link.text}
+                onChange={(e) => updateLink(link.id, { text: e.target.value })}
+                className="h-7 text-xs"
+                placeholder="Link text"
+              />
+            </div>
+            <div className="flex flex-col gap-1 flex-1">
+              <Label className="text-[10px] text-muted-foreground">
+                {link.linkType === "email" ? "Email" : link.linkType === "telephone" ? "Phone" : "URL"}
+              </Label>
+              <Input
+                value={link.url}
+                onChange={(e) => updateLink(link.id, { url: e.target.value })}
+                className="h-7 text-xs font-mono"
+                placeholder={linkTypePlaceholders[link.linkType]}
+              />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ─── Heading Editor ─── */
+
+function HeadingEditor({
+  component,
+  onUpdate,
+  updateProps,
+}: {
+  component: EmailComponent
+  onUpdate: (updates: Partial<EmailComponent>) => void
+  updateProps: (key: string, value: unknown) => void
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const { links, insertAtCursor, addLink, updateLink, removeLink } = useRichTextEditor({
+    component,
+    onUpdate,
+    updateProps,
+    inputRef,
+  })
+
   return (
     <div className="flex flex-col gap-2">
-      {/* Toolbar */}
-      <div className="flex items-center gap-1 flex-wrap">
-        {/* Variable insertion */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5">
-              <Variable className="h-3 w-3" />
-              Variable
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-52 p-1" align="start">
-            <div className="flex flex-col">
-              {TEMPLATE_VARIABLES.map((v) => (
-                <button
-                  key={v}
-                  className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent text-left font-mono"
-                  onClick={() => insertAtCursor(v)}
-                >
-                  {v}
-                </button>
-              ))}
-            </div>
-          </PopoverContent>
-        </Popover>
-
-        {/* Link insertion */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5">
-              <Link className="h-3 w-3" />
-              Link
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-44 p-1" align="start">
-            <div className="flex flex-col">
-              <button
-                className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent text-left"
-                onClick={() => addLink("web")}
-              >
-                <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-                Web link
-              </button>
-              <button
-                className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent text-left"
-                onClick={() => addLink("email")}
-              >
-                <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                Email link
-              </button>
-              <button
-                className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent text-left"
-                onClick={() => addLink("telephone")}
-              >
-                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                Telephone link
-              </button>
-            </div>
-          </PopoverContent>
-        </Popover>
+      <RichTextToolbar insertAtCursor={insertAtCursor} addLink={addLink} />
+      <div className="flex items-center gap-2">
+        <Select
+          value={String(component.props.level || 1)}
+          onValueChange={(val) => updateProps("level", Number(val))}
+        >
+          <SelectTrigger className="w-20 h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="1">H1</SelectItem>
+            <SelectItem value="2">H2</SelectItem>
+            <SelectItem value="3">H3</SelectItem>
+            <SelectItem value="4">H4</SelectItem>
+          </SelectContent>
+        </Select>
+        <Input
+          ref={inputRef}
+          value={component.content}
+          onChange={(e) => onUpdate({ content: e.target.value })}
+          placeholder="Heading text"
+          className="h-8 text-sm"
+        />
       </div>
+      <LinksEditor links={links} updateLink={updateLink} removeLink={removeLink} />
+    </div>
+  )
+}
 
-      {/* Textarea */}
+/* ─── Paragraph Editor ─── */
+
+function ParagraphEditor({
+  component,
+  onUpdate,
+  updateProps,
+}: {
+  component: EmailComponent
+  onUpdate: (updates: Partial<EmailComponent>) => void
+  updateProps: (key: string, value: unknown) => void
+}) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const { links, insertAtCursor, addLink, updateLink, removeLink } = useRichTextEditor({
+    component,
+    onUpdate,
+    updateProps,
+    inputRef: textareaRef,
+  })
+
+  return (
+    <div className="flex flex-col gap-2">
+      <RichTextToolbar insertAtCursor={insertAtCursor} addLink={addLink} />
       <Textarea
         ref={textareaRef}
         value={component.content}
@@ -386,55 +502,7 @@ function ParagraphEditor({
         placeholder="Paragraph text... (use Enter for line breaks)"
         className="min-h-[80px] text-sm resize-y font-mono"
       />
-
-      {/* Active links list */}
-      {links.length > 0 && (
-        <div className="flex flex-col gap-1.5 rounded-md border bg-muted/50 p-2">
-          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Links</span>
-          {links.map((link) => (
-            <div key={link.id} className="flex flex-col gap-1 rounded-md border bg-card p-2">
-              <div className="flex items-center gap-1.5">
-                <span className="text-muted-foreground">{linkTypeIcons[link.linkType]}</span>
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                  {link.linkType}
-                </Badge>
-                <code className="text-[10px] text-muted-foreground ml-auto font-mono">[link:{link.id}]</code>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                  onClick={() => removeLink(link.id)}
-                >
-                  <X className="h-3 w-3" />
-                  <span className="sr-only">Remove link</span>
-                </Button>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="flex flex-col gap-1 flex-1">
-                  <Label className="text-[10px] text-muted-foreground">Display text</Label>
-                  <Input
-                    value={link.text}
-                    onChange={(e) => updateLink(link.id, { text: e.target.value })}
-                    className="h-7 text-xs"
-                    placeholder="Link text"
-                  />
-                </div>
-                <div className="flex flex-col gap-1 flex-1">
-                  <Label className="text-[10px] text-muted-foreground">
-                    {link.linkType === "email" ? "Email" : link.linkType === "telephone" ? "Phone" : "URL"}
-                  </Label>
-                  <Input
-                    value={link.url}
-                    onChange={(e) => updateLink(link.id, { url: e.target.value })}
-                    className="h-7 text-xs font-mono"
-                    placeholder={linkTypePlaceholders[link.linkType]}
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      <LinksEditor links={links} updateLink={updateLink} removeLink={removeLink} />
     </div>
   )
 }

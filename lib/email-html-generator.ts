@@ -20,7 +20,9 @@ function renderHeading(component: EmailComponent, section: EmailSection): string
   }
   const tag = `h${level}`
   const color = section.type === "header" ? "#ffffff" : section.type === "footer" ? "#aaaaaa" : "#333333"
-  return `<${tag} style="margin:0;padding:0 0 12px 0;${sizes[level] || sizes[1]}font-weight:bold;color:${color};font-family:Helvetica, Arial, sans-serif;">${escapeHtml(component.content)}</${tag}>`
+  const links = (component.props.links as ParagraphLink[]) || []
+  const inner = processRichContent(component.content, links)
+  return `<${tag} style="margin:0;padding:0 0 12px 0;${sizes[level] || sizes[1]}font-weight:bold;color:${color};font-family:Helvetica, Arial, sans-serif;">${inner}</${tag}>`
 }
 
 function buildLinkHref(link: ParagraphLink): string {
@@ -35,7 +37,7 @@ function buildLinkHref(link: ParagraphLink): string {
   }
 }
 
-function processParagraphContent(content: string, links: ParagraphLink[]): string {
+function processRichContent(content: string, links: ParagraphLink[]): string {
   // First escape the raw text
   let processed = escapeHtml(content)
 
@@ -58,7 +60,7 @@ function renderParagraph(component: EmailComponent, section: EmailSection): stri
   const fontSize = section.type === "footer" ? "12px" : "14px"
   const lineHeight = section.type === "footer" ? "16px" : "20px"
   const links = (component.props.links as ParagraphLink[]) || []
-  const inner = processParagraphContent(component.content, links)
+  const inner = processRichContent(component.content, links)
   return `<p style="margin:0;padding:0 0 12px 0;font-size:${fontSize};line-height:${lineHeight};color:${color};font-family:Helvetica, Arial, sans-serif;">${inner}</p>`
 }
 
