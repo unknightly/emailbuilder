@@ -75,24 +75,6 @@ export function PreviewPanel({ html }: PreviewPanelProps) {
               Entities
             </TabsTrigger>
           </TabsList>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 text-xs gap-1.5"
-            onClick={copyToClipboard}
-          >
-            {copied ? (
-              <>
-                <Check className="h-3 w-3" />
-                Copied
-              </>
-            ) : (
-              <>
-                <Copy className="h-3 w-3" />
-                Copy HTML
-              </>
-            )}
-          </Button>
         </div>
 
         <TabsContent value="preview" className="flex-1 m-0 overflow-hidden">
@@ -111,6 +93,26 @@ export function PreviewPanel({ html }: PreviewPanelProps) {
 
         <TabsContent value="html" className="flex-1 m-0 overflow-hidden">
           <div className="h-full overflow-auto bg-[hsl(var(--muted))]">
+            <div className="flex justify-end p-2 border-b">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs gap-1.5"
+                onClick={copyToClipboard}
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-3 w-3" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3 w-3" />
+                    Copy HTML
+                  </>
+                )}
+              </Button>
+            </div>
             <pre className="p-4 text-xs leading-relaxed font-mono text-foreground whitespace-pre-wrap break-words">
               {html}
             </pre>
