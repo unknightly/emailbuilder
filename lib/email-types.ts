@@ -93,13 +93,19 @@ export function createDefaultSections(): EmailSection[] {
         {
           id: createId(),
           type: "paragraph",
-          content: "Dear $FirstName,",
+          content: "Dear $FirstName,\nUser number: $PolicyOwnerNumber\n",
           props: {},
         },
         {
           id: createId(),
+          type: "heading",
+          content: "Thanks for doing that thing: $ApplicationReference",
+          props: { level: 3 },
+        },
+        {
+          id: createId(),
           type: "paragraph",
-          content: "Thank you for your recent enquiry. We are currently reviewing your request and will be in touch shortly.",
+          content: "Thank you for your recent enquiry. We are currently reviewing your request and will be in touch shortly.\n",
           props: {},
         },
         {
@@ -112,6 +118,24 @@ export function createDefaultSections(): EmailSection[] {
           id: createId(),
           type: "paragraph",
           content: "Our team will review the information you have provided. You can track the status of your request by logging into your account.",
+          props: {},
+        },
+        {
+          id: createId(),
+          type: "list",
+          content: "",
+          props: { items: ["Item 1", "Item 2", "Item 3"] },
+        },
+        {
+          id: createId(),
+          type: "heading",
+          content: "We'd love your feedback",
+          props: { level: 3 },
+        },
+        {
+          id: createId(),
+          type: "paragraph",
+          content: "We'd appreciate it if you could spare a few moments to provide some feedback on your recent experience.",
           props: {},
         },
         {
