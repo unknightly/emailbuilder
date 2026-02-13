@@ -110,12 +110,11 @@ export default function ArchitecturePage() {
   return (
     <div className="min-h-screen font-sans" style={{ backgroundColor: BG_PAGE }}>
       <AppHeader currentPath="/architecture" />
-
-      <div className="px-8 py-6" style={{ backgroundColor: BG_CARD, borderBottom: `1px solid ${BORDER}` }}>
-        <h1 className="text-xl font-bold tracking-tight" style={{ color: "#0f172a" }}>
-          Email Builder -- Architecture Diagram
-        </h1>
-        <p className="text-sm mt-1" style={{ color: MUTED }}>
+      <div className="border-b px-8 py-5" style={{ borderColor: BORDER, backgroundColor: BG_CARD }}>
+        <h2 className="text-lg font-bold tracking-tight" style={{ color: "#0f172a" }}>
+          Architecture Diagram
+        </h2>
+        <p className="text-sm mt-0.5" style={{ color: MUTED }}>
           Client-side Next.js application. No backend or database required.
         </p>
       </div>
@@ -452,15 +451,6 @@ export default function ArchitecturePage() {
               </div>
             ))}
           </div>
-        </div>
-        {/* Navigation */}
-        <div className="mt-10 flex justify-between items-center py-4 border-t" style={{ borderColor: BORDER }}>
-          <a href="/" className="text-xs font-medium hover:underline" style={{ color: ACCENT }}>
-            Back to Email Builder
-          </a>
-          <a href="/architecture/schema" className="text-xs font-medium hover:underline" style={{ color: ACCENT }}>
-            JSON Schema Breakdown
-          </a>
         </div>
       </main>
     </div>
