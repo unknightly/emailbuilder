@@ -28,7 +28,7 @@ const THEME_FIELDS: { key: keyof EmailTheme; label: string; group: string }[] = 
   { key: "bodyTextColor", label: "Body text", group: "Text" },
   { key: "footerTextColor", label: "Footer text", group: "Text" },
   { key: "linkColor", label: "Links", group: "Text" },
-  { key: "lineItemBorderColor", label: "Line item border", group: "Other" },
+  { key: "indentBackground", label: "Indent block", group: "Other" },
 ]
 
 export function ThemeEditor({ theme, onChange }: ThemeEditorProps) {

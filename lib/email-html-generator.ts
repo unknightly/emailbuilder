@@ -99,14 +99,16 @@ function renderList(component: EmailComponent, section: EmailSection, theme: Ema
 </table>`
 }
 
-function renderLineItem(component: EmailComponent, section: EmailSection, theme: EmailTheme): string {
-  const label = (component.props.label as string) || ""
-  const value = (component.props.value as string) || ""
+function renderIndent(component: EmailComponent, section: EmailSection, theme: EmailTheme): string {
   const color = section.type === "footer" ? theme.footerTextColor : theme.bodyTextColor
-  return `<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-bottom:1px solid ${theme.lineItemBorderColor};">
+  const fontSize = section.type === "footer" ? "12px" : "14px"
+  const lineHeight = section.type === "footer" ? "16px" : "20px"
+  const content = escapeHtml(component.content).replace(/\n/g, "<br>")
+  return `<table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 12px 0;">
   <tr>
-    <td style="font-size:14px;line-height:20px;color:${color};font-family:Helvetica, Arial, sans-serif;padding:8px 0;" align="left">${escapeHtml(label)}</td>
-    <td style="font-size:14px;line-height:20px;color:${color};font-weight:bold;font-family:Helvetica, Arial, sans-serif;padding:8px 0;" align="right">${escapeHtml(value)}</td>
+    <td style="background-color:${theme.indentBackground};border-radius:4px;padding:16px 20px;font-size:${fontSize};line-height:${lineHeight};color:${color};font-family:Helvetica, Arial, sans-serif;">
+${content}
+    </td>
   </tr>
 </table>`
 }
@@ -125,8 +127,8 @@ function renderComponent(component: EmailComponent, section: EmailSection, theme
       return renderImage(component, section)
     case "list":
       return renderList(component, section, theme)
-    case "line-item":
-      return renderLineItem(component, section, theme)
+    case "indent":
+      return renderIndent(component, section, theme)
     case "html":
       return renderHtmlBlock(component)
     default:

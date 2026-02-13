@@ -1,6 +1,6 @@
 "use client"
 
-import { Heading, AlignLeft, ImageIcon, List, Minus } from "lucide-react"
+import { Heading, AlignLeft, ImageIcon, List, IndentIncrease } from "lucide-react"
 import type { ComponentType } from "@/lib/email-types"
 import {
   Popover,
@@ -16,7 +16,7 @@ const componentOptions: { type: ComponentType; label: string; icon: React.ReactN
   { type: "paragraph", label: "Paragraph", icon: <AlignLeft className="h-4 w-4" /> },
   { type: "image", label: "Image", icon: <ImageIcon className="h-4 w-4" /> },
   { type: "list", label: "List", icon: <List className="h-4 w-4" /> },
-  { type: "line-item", label: "Line Item", icon: <Minus className="h-4 w-4" /> },
+  { type: "indent", label: "Indent", icon: <IndentIncrease className="h-4 w-4" /> },
 ]
 
 interface AddComponentMenuProps {

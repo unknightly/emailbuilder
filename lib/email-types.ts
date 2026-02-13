@@ -8,7 +8,7 @@ export interface EmailTheme {
   bodyTextColor: string
   footerTextColor: string
   linkColor: string
-  lineItemBorderColor: string
+  indentBackground: string
 }
 
 export const DEFAULT_THEME: EmailTheme = {
@@ -21,7 +21,7 @@ export const DEFAULT_THEME: EmailTheme = {
   bodyTextColor: "#333333",
   footerTextColor: "#aaaaaa",
   linkColor: "#1a73e8",
-  lineItemBorderColor: "#e0e0e0",
+  indentBackground: "#f7f7f7",
 }
 
 export type ComponentType =
@@ -29,7 +29,7 @@ export type ComponentType =
   | "paragraph"
   | "image"
   | "list"
-  | "line-item"
+  | "indent"
   | "html"
 
 export type LinkType = "web" | "email" | "telephone"
@@ -160,8 +160,8 @@ export function createComponent(type: ComponentType): EmailComponent {
       }
     case "list":
       return { id, type, content: "", props: { items: ["Item 1", "Item 2", "Item 3"] } }
-    case "line-item":
-      return { id, type, content: "", props: { label: "Item", value: "$0.00" } }
+    case "indent":
+      return { id, type, content: "Indented content goes here...", props: {} }
     case "html":
       return { id, type, content: "<p>Custom HTML content</p>", props: {} }
   }

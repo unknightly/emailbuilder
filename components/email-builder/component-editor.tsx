@@ -43,7 +43,7 @@ import {
   AlignLeft,
   ImageIcon,
   List,
-  Minus,
+  IndentIncrease,
   Code,
   Plus,
   X,
@@ -60,7 +60,7 @@ const typeIcons: Record<string, React.ReactNode> = {
   paragraph: <AlignLeft className="h-3.5 w-3.5" />,
   image: <ImageIcon className="h-3.5 w-3.5" />,
   list: <List className="h-3.5 w-3.5" />,
-  "line-item": <Minus className="h-3.5 w-3.5" />,
+  indent: <IndentIncrease className="h-3.5 w-3.5" />,
   html: <Code className="h-3.5 w-3.5" />,
 }
 
@@ -69,7 +69,7 @@ const typeLabels: Record<string, string> = {
   paragraph: "Paragraph",
   image: "Image",
   list: "List",
-  "line-item": "Line Item",
+  indent: "Indent",
   html: "HTML",
 }
 
@@ -193,21 +193,13 @@ export function ComponentEditor({
           />
         )}
 
-        {component.type === "line-item" && (
-          <div className="flex items-center gap-2">
-            <Input
-              value={(component.props.label as string) || ""}
-              onChange={(e) => updateProps("label", e.target.value)}
-              placeholder="Label"
-              className="h-8 text-sm"
-            />
-            <Input
-              value={(component.props.value as string) || ""}
-              onChange={(e) => updateProps("value", e.target.value)}
-              placeholder="Value"
-              className="h-8 text-sm w-32"
-            />
-          </div>
+        {component.type === "indent" && (
+          <Textarea
+            value={component.content}
+            onChange={(e) => onUpdate({ content: e.target.value })}
+            placeholder="Indented content... (use Enter for line breaks)"
+            className="min-h-[60px] text-sm resize-y"
+          />
         )}
 
         {component.type === "html" && (
