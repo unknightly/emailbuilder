@@ -22,7 +22,8 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable"
-import { Mail, Download, Upload } from "lucide-react"
+import { Download, Upload } from "lucide-react"
+import { AppHeader } from "./app-header"
 
 export function EmailBuilder() {
   const [sections, setSections] = useState<EmailSection[]>(createDefaultSections)
@@ -150,17 +151,7 @@ export function EmailBuilder() {
         onChange={handleUpload}
       />
 
-      {/* App header */}
-      <header className="flex items-center gap-3 border-b px-5 py-3 shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-foreground">
-            <Mail className="h-4 w-4 text-background" />
-          </div>
-          <div>
-            <h1 className="text-sm font-semibold tracking-tight leading-none">Email Builder</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">Compose table-based email templates</p>
-          </div>
-        </div>
+      <AppHeader currentPath="/">
         <div className="ml-auto flex items-center gap-2">
           <Button
             variant="outline"
@@ -181,7 +172,7 @@ export function EmailBuilder() {
             Download
           </Button>
         </div>
-      </header>
+      </AppHeader>
 
       {/* Download dialog */}
       <Dialog open={downloadDialogOpen} onOpenChange={setDownloadDialogOpen}>

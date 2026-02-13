@@ -1,5 +1,7 @@
 "use client"
 
+import { AppHeader } from "@/components/email-builder/app-header"
+
 const ACCENT = "#1a73e8"
 const MUTED = "#64748b"
 const BORDER = "#e2e8f0"
@@ -130,8 +132,9 @@ function CodeBlock({ code }: { code: string }) {
 export default function SchemaPage() {
   return (
     <div className="min-h-screen font-sans" style={{ backgroundColor: BG_PAGE }}>
-      {/* Header */}
-      <header className="border-b px-8 py-6" style={{ borderColor: BORDER, backgroundColor: BG_CARD }}>
+      <AppHeader currentPath="/architecture/schema" />
+
+      <div className="px-8 py-6" style={{ backgroundColor: BG_CARD, borderBottom: `1px solid ${BORDER}` }}>
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center gap-3 mb-1">
             <a href="/architecture" className="text-xs hover:underline" style={{ color: ACCENT }}>Architecture</a>
@@ -145,7 +148,7 @@ export default function SchemaPage() {
             Complete specification of the JSON file format used for importing and exporting email templates.
           </p>
         </div>
-      </header>
+      </div>
 
       <main className="px-8 py-8 max-w-5xl mx-auto">
 

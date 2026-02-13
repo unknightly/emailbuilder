@@ -1,5 +1,7 @@
 "use client"
 
+import { AppHeader } from "@/components/email-builder/app-header"
+
 const ACCENT = "#1a73e8"
 const MUTED = "#64748b"
 const BORDER = "#e2e8f0"
@@ -107,15 +109,16 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 export default function ArchitecturePage() {
   return (
     <div className="min-h-screen font-sans" style={{ backgroundColor: BG_PAGE }}>
-      {/* Header */}
-      <header className="border-b px-8 py-6" style={{ borderColor: BORDER, backgroundColor: BG_CARD }}>
+      <AppHeader currentPath="/architecture" />
+
+      <div className="px-8 py-6" style={{ backgroundColor: BG_CARD, borderBottom: `1px solid ${BORDER}` }}>
         <h1 className="text-xl font-bold tracking-tight" style={{ color: "#0f172a" }}>
           Email Builder -- Architecture Diagram
         </h1>
         <p className="text-sm mt-1" style={{ color: MUTED }}>
           Client-side Next.js application. No backend or database required.
         </p>
-      </header>
+      </div>
 
       <main className="px-8 py-10 max-w-6xl mx-auto">
 
