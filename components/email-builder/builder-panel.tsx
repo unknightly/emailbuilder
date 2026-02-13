@@ -13,7 +13,6 @@ interface BuilderPanelProps {
   onUpdateComponent: (sectionId: string, componentId: string, updates: Partial<EmailComponent>) => void
   onRemoveComponent: (sectionId: string, componentId: string) => void
   onMoveComponent: (sectionId: string, componentId: string, direction: "up" | "down") => void
-  onInjectHTML: (sectionId: string, html: string) => void
 }
 
 export function BuilderPanel({
@@ -24,7 +23,6 @@ export function BuilderPanel({
   onUpdateComponent,
   onRemoveComponent,
   onMoveComponent,
-  onInjectHTML,
 }: BuilderPanelProps) {
   return (
     <div className="flex h-full flex-col">
@@ -42,7 +40,6 @@ export function BuilderPanel({
               onUpdateComponent={onUpdateComponent}
               onRemoveComponent={onRemoveComponent}
               onMoveComponent={onMoveComponent}
-              onInjectHTML={onInjectHTML}
             />
           ))}
         </div>

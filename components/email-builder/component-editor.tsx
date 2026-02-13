@@ -152,13 +152,16 @@ export function ComponentEditor({
                 placeholder="Alt text"
                 className="h-8 text-sm"
               />
-              <Input
-                type="number"
-                value={(component.props.width as number) || 600}
-                onChange={(e) => updateProps("width", Number(e.target.value))}
-                placeholder="Width"
-                className="h-8 text-sm w-24"
-              />
+              <div className="flex items-center gap-1.5">
+                <Input
+                  type="number"
+                  value={(component.props.width as number) || 600}
+                  onChange={(e) => updateProps("width", Number(e.target.value))}
+                  placeholder="Width"
+                  className="h-8 text-sm w-24"
+                />
+                <span className="text-xs text-muted-foreground shrink-0">px</span>
+              </div>
             </div>
           </>
         )}

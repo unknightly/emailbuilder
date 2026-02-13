@@ -5,7 +5,6 @@ import type { EmailSection, EmailComponent, ComponentType } from "@/lib/email-ty
 import { createComponent } from "@/lib/email-types"
 import { ComponentEditor } from "./component-editor"
 import { AddComponentMenu } from "./add-component-menu"
-import { HtmlPasteDialog } from "./html-paste-dialog"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { ChevronRight, LayoutTemplate, FileText, Copyright } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -28,7 +27,6 @@ interface SectionEditorProps {
   onUpdateComponent: (sectionId: string, componentId: string, updates: Partial<EmailComponent>) => void
   onRemoveComponent: (sectionId: string, componentId: string) => void
   onMoveComponent: (sectionId: string, componentId: string, direction: "up" | "down") => void
-  onInjectHTML: (sectionId: string, html: string) => void
 }
 
 export function SectionEditor({
@@ -37,7 +35,6 @@ export function SectionEditor({
   onUpdateComponent,
   onRemoveComponent,
   onMoveComponent,
-  onInjectHTML,
 }: SectionEditorProps) {
   const [open, setOpen] = useState(true)
 
@@ -87,12 +84,7 @@ export function SectionEditor({
               </div>
             )}
 
-            <div className="flex items-center gap-2">
-              <div className="flex-1">
-                <AddComponentMenu onAdd={(type) => onAddComponent(section.id, type)} />
-              </div>
-              <HtmlPasteDialog onInsert={(html) => onInjectHTML(section.id, html)} />
-            </div>
+            <AddComponentMenu onAdd={(type) => onAddComponent(section.id, type)} />
           </div>
         </CollapsibleContent>
       </div>

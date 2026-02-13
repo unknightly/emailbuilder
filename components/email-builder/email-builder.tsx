@@ -85,17 +85,7 @@ export function EmailBuilder() {
     []
   )
 
-  const injectHTML = useCallback((sectionId: string, html: string) => {
-    const htmlComponent = createComponent("html")
-    htmlComponent.content = html
-    setSections((prev) =>
-      prev.map((s) =>
-        s.id === sectionId
-          ? { ...s, components: [...s.components, htmlComponent] }
-          : s
-      )
-    )
-  }, [])
+
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false)
@@ -239,7 +229,6 @@ export function EmailBuilder() {
               onUpdateComponent={updateComponent}
               onRemoveComponent={removeComponent}
               onMoveComponent={moveComponent}
-              onInjectHTML={injectHTML}
             />
           </ResizablePanel>
           <ResizableHandle withHandle />
