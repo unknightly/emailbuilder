@@ -38,8 +38,8 @@ function Box({
       </div>
       {items && items.length > 0 && (
         <ul className="px-4 py-2.5 flex flex-col gap-1">
-          {items.map((item) => (
-            <li key={item} className="text-[11px] leading-tight" style={{ color: MUTED }}>
+          {items.map((item, idx) => (
+            <li key={`${idx}-${item}`} className="text-[11px] leading-tight" style={{ color: MUTED }}>
               {item}
             </li>
           ))}
