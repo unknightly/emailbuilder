@@ -15,25 +15,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import {
   ChevronUp,
@@ -47,13 +34,14 @@ import {
   Code,
   Plus,
   X,
-  Link,
+  Link2,
   Globe,
   Mail,
   Phone,
-  Variable,
   MoreVertical,
 } from "lucide-react"
+
+/* ─── Constants ─── */
 
 const typeIcons: Record<string, React.ReactNode> = {
   heading: <Heading className="h-3.5 w-3.5" />,
@@ -72,6 +60,14 @@ const typeLabels: Record<string, string> = {
   indent: "Indent",
   html: "HTML",
 }
+
+const linkTypeConfig: Record<LinkType, { icon: React.ReactNode; label: string; placeholder: string; urlLabel: string }> = {
+  web: { icon: <Globe className="h-3.5 w-3.5" />, label: "Web", placeholder: "https://example.com", urlLabel: "URL" },
+  email: { icon: <Mail className="h-3.5 w-3.5" />, label: "Email", placeholder: "hello@example.com", urlLabel: "Email" },
+  telephone: { icon: <Phone className="h-3.5 w-3.5" />, label: "Phone", placeholder: "+61 400 000 000", urlLabel: "Phone" },
+}
+
+/* ─── Main Component Editor ─── */
 
 interface ComponentEditorProps {
   component: EmailComponent
@@ -105,35 +101,22 @@ export function ComponentEditor({
         <div className="ml-auto">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-muted-foreground"
-              >
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground">
                 <MoreVertical className="h-4 w-4" />
                 <span className="sr-only">Component actions</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-36">
-              <DropdownMenuItem
-                onClick={() => onMove("up")}
-                disabled={isFirst}
-              >
+              <DropdownMenuItem onClick={() => onMove("up")} disabled={isFirst}>
                 <ChevronUp className="h-4 w-4" />
                 Move up
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onMove("down")}
-                disabled={isLast}
-              >
+              <DropdownMenuItem onClick={() => onMove("down")} disabled={isLast}>
                 <ChevronDown className="h-4 w-4" />
                 Move down
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={onRemove}
-                className="text-destructive focus:text-destructive"
-              >
+              <DropdownMenuItem onClick={onRemove} className="text-destructive focus:text-destructive">
                 <Trash2 className="h-4 w-4" />
                 Delete
               </DropdownMenuItem>
@@ -145,21 +128,11 @@ export function ComponentEditor({
       {/* Editor body */}
       <div className="flex flex-col gap-2">
         {component.type === "heading" && (
-          <HeadingEditor
-            component={component}
-            onUpdate={onUpdate}
-            updateProps={updateProps}
-          />
+          <HeadingEditor component={component} onUpdate={onUpdate} updateProps={updateProps} />
         )}
-
         {component.type === "paragraph" && (
-          <ParagraphEditor
-            component={component}
-            onUpdate={onUpdate}
-            updateProps={updateProps}
-          />
+          <ParagraphEditor component={component} onUpdate={onUpdate} updateProps={updateProps} />
         )}
-
         {component.type === "image" && (
           <>
             <Input
@@ -185,14 +158,12 @@ export function ComponentEditor({
             </div>
           </>
         )}
-
         {component.type === "list" && (
           <ListEditor
             items={(component.props.items as string[]) || []}
             onChange={(items) => updateProps("items", items)}
           />
         )}
-
         {component.type === "indent" && (
           <Textarea
             value={component.content}
@@ -201,7 +172,6 @@ export function ComponentEditor({
             className="min-h-[60px] text-sm resize-y"
           />
         )}
-
         {component.type === "html" && (
           <pre className="rounded-md bg-muted p-3 text-xs font-mono overflow-x-auto max-h-32 overflow-y-auto text-muted-foreground">
             {component.content}
@@ -212,21 +182,9 @@ export function ComponentEditor({
   )
 }
 
-/* ─── Shared Rich Text Toolbar + Links Editor ─── */
+/* ─── Rich Text Hook ─── */
 
-const linkTypeIcons: Record<LinkType, React.ReactNode> = {
-  web: <Globe className="h-3 w-3" />,
-  email: <Mail className="h-3 w-3" />,
-  telephone: <Phone className="h-3 w-3" />,
-}
-
-const linkTypePlaceholders: Record<LinkType, string> = {
-  web: "https://example.com",
-  email: "hello@example.com",
-  telephone: "+61 400 000 000",
-}
-
-function useRichTextEditor({
+function useRichText({
   component,
   onUpdate,
   updateProps,
@@ -248,30 +206,21 @@ function useRichTextEditor({
       }
       const start = el.selectionStart ?? component.content.length
       const end = el.selectionEnd ?? component.content.length
-      const before = component.content.slice(0, start)
-      const after = component.content.slice(end)
-      onUpdate({ content: before + text + after })
+      onUpdate({ content: component.content.slice(0, start) + text + component.content.slice(end) })
       requestAnimationFrame(() => {
         el.selectionStart = el.selectionEnd = start + text.length
         el.focus()
       })
     },
-    [component.content, onUpdate, inputRef]
+    [component.content, onUpdate, inputRef],
   )
 
-  const commitLink = useCallback(
+  const addLink = useCallback(
     (link: ParagraphLink) => {
       updateProps("links", [...links, link])
       insertAtCursor(`[link:${link.id}]`)
     },
-    [links, updateProps, insertAtCursor]
-  )
-
-  const updateLink = useCallback(
-    (linkId: string, updates: Partial<ParagraphLink>) => {
-      updateProps("links", links.map((l) => (l.id === linkId ? { ...l, ...updates } : l)))
-    },
-    [links, updateProps]
+    [links, updateProps, insertAtCursor],
   )
 
   const removeLink = useCallback(
@@ -282,222 +231,197 @@ function useRichTextEditor({
         onUpdate({ content: component.content.replace(placeholder, "") })
       }
     },
-    [links, updateProps, component.content, onUpdate]
+    [links, updateProps, component.content, onUpdate],
   )
 
-  return { links, insertAtCursor, commitLink, updateLink, removeLink }
+  return { links, insertAtCursor, addLink, removeLink }
 }
 
-/* ─── Add Link Dialog ─── */
+/* ─── Variable Chips ─── */
 
-function AddLinkDialog({
-  open,
-  onOpenChange,
-  onConfirm,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onConfirm: (link: ParagraphLink) => void
-}) {
-  const [linkType, setLinkType] = useState<LinkType>("web")
-  const [text, setText] = useState("")
-  const [url, setUrl] = useState("")
-
-  const reset = () => {
-    setLinkType("web")
-    setText("")
-    setUrl("")
-  }
-
-  const handleConfirm = () => {
-    if (!text.trim() || !url.trim()) return
-    onConfirm({
-      id: createId(),
-      text: text.trim(),
-      url: url.trim(),
-      linkType,
-    })
-    reset()
-    onOpenChange(false)
-  }
-
-  const handleCancel = () => {
-    reset()
-    onOpenChange(false)
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) handleCancel(); else onOpenChange(v) }}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-base">Insert Link</DialogTitle>
-          <DialogDescription>Choose a link type and fill in the details.</DialogDescription>
-        </DialogHeader>
-        <div className="flex flex-col gap-4 py-2">
-          {/* Link type selector */}
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-xs font-medium">Link type</Label>
-            <div className="flex gap-2">
-              {(["web", "email", "telephone"] as const).map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setLinkType(type)}
-                  className={`flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm transition-colors ${
-                    linkType === type
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-border bg-card text-foreground hover:bg-accent"
-                  }`}
-                >
-                  {type === "web" && <Globe className="h-3.5 w-3.5" />}
-                  {type === "email" && <Mail className="h-3.5 w-3.5" />}
-                  {type === "telephone" && <Phone className="h-3.5 w-3.5" />}
-                  <span className="capitalize">{type}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Display text */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="link-text" className="text-xs font-medium">Display text</Label>
-            <Input
-              id="link-text"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder={linkType === "telephone" ? "Call us" : linkType === "email" ? "Email us" : "Click here"}
-              className="text-sm"
-            />
-            <p className="text-[11px] text-muted-foreground">The text the reader will see and click on.</p>
-          </div>
-
-          {/* URL / destination */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="link-url" className="text-xs font-medium">
-              {linkType === "email" ? "Email address" : linkType === "telephone" ? "Phone number" : "Web URL"}
-            </Label>
-            <Input
-              id="link-url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder={linkTypePlaceholders[linkType]}
-              className="text-sm font-mono"
-            />
-            <p className="text-[11px] text-muted-foreground">
-              {linkType === "email"
-                ? "The email address to open in the reader's mail client."
-                : linkType === "telephone"
-                ? "The phone number to dial when tapped."
-                : "The full URL to navigate to. Include https://."}
-            </p>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" size="sm" onClick={handleCancel}>
-            Cancel
-          </Button>
-          <Button
-            size="sm"
-            onClick={handleConfirm}
-            disabled={!text.trim() || !url.trim()}
-          >
-            Insert Link
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-/* ─── Rich Text Toolbar ─── */
-
-function RichTextToolbar({
-  insertAtCursor,
-  onAddLink,
-}: {
-  insertAtCursor: (text: string) => void
-  onAddLink: () => void
-}) {
+function VariableChips({ onInsert }: { onInsert: (v: string) => void }) {
   return (
     <div className="flex items-center gap-1 flex-wrap">
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5">
-            <Variable className="h-3 w-3" />
-            Variable
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-52 p-1" align="start">
-          <div className="flex flex-col">
-            {TEMPLATE_VARIABLES.map((v) => (
-              <button
-                key={v}
-                className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent text-left font-mono"
-                onClick={() => insertAtCursor(v)}
-              >
-                {v}
-              </button>
-            ))}
-          </div>
-        </PopoverContent>
-      </Popover>
-
-      <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={onAddLink}>
-        <Link className="h-3 w-3" />
-        Link
-      </Button>
+      {TEMPLATE_VARIABLES.map((v) => (
+        <button
+          key={v}
+          type="button"
+          onClick={() => onInsert(v)}
+          className="inline-flex items-center rounded-md border border-dashed border-border bg-muted/60 px-2 py-0.5 text-[11px] font-mono text-muted-foreground transition-colors hover:bg-accent hover:text-foreground hover:border-foreground/30"
+        >
+          {v}
+        </button>
+      ))}
     </div>
   )
 }
 
-/* ─── Inline Links List ─── */
+/* ─── Inline Link Creator ─── */
 
-function LinksEditor({
-  links,
-  updateLink,
-  removeLink,
-}: {
-  links: ParagraphLink[]
-  updateLink: (linkId: string, updates: Partial<ParagraphLink>) => void
-  removeLink: (linkId: string) => void
-}) {
+function InlineLinkCreator({ onAdd, onCancel }: { onAdd: (link: ParagraphLink) => void; onCancel: () => void }) {
+  const [linkType, setLinkType] = useState<LinkType>("web")
+  const [text, setText] = useState("")
+  const [url, setUrl] = useState("")
+
+  const handleAdd = () => {
+    if (!text.trim() || !url.trim()) return
+    onAdd({ id: createId(), text: text.trim(), url: url.trim(), linkType })
+    setText("")
+    setUrl("")
+  }
+
+  const cfg = linkTypeConfig[linkType]
+
+  return (
+    <div className="rounded-md border bg-muted/30 p-2.5 flex flex-col gap-2">
+      {/* Type toggle */}
+      <div className="flex items-center gap-1">
+        {(["web", "email", "telephone"] as const).map((type) => {
+          const c = linkTypeConfig[type]
+          return (
+            <button
+              key={type}
+              type="button"
+              onClick={() => setLinkType(type)}
+              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-colors ${
+                linkType === type
+                  ? "bg-foreground text-background"
+                  : "bg-card border text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {c.icon}
+              {c.label}
+            </button>
+          )
+        })}
+        <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto text-muted-foreground" onClick={onCancel}>
+          <X className="h-3.5 w-3.5" />
+          <span className="sr-only">Cancel</span>
+        </Button>
+      </div>
+      {/* Fields */}
+      <div className="flex items-end gap-2">
+        <div className="flex flex-col gap-1 flex-1">
+          <Label className="text-[10px] text-muted-foreground">Display text</Label>
+          <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Click here" className="h-7 text-xs" />
+        </div>
+        <div className="flex flex-col gap-1 flex-1">
+          <Label className="text-[10px] text-muted-foreground">{cfg.urlLabel}</Label>
+          <Input
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleAdd() }}
+            placeholder={cfg.placeholder}
+            className="h-7 text-xs font-mono"
+          />
+        </div>
+        <Button size="sm" className="h-7 text-xs shrink-0" disabled={!text.trim() || !url.trim()} onClick={handleAdd}>
+          Insert
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Links Summary ─── */
+
+function LinksList({ links, onRemove }: { links: ParagraphLink[]; onRemove: (id: string) => void }) {
   if (links.length === 0) return null
 
-  const linkTypeLabels: Record<LinkType, string> = {
-    web: "Web",
-    email: "Email",
-    telephone: "Phone",
+  return (
+    <div className="flex flex-col gap-1">
+      {links.map((link) => {
+        const cfg = linkTypeConfig[link.linkType]
+        return (
+          <div key={link.id} className="flex items-center gap-2 rounded-md bg-muted/40 px-2 py-1">
+            <span className="text-muted-foreground shrink-0">{cfg.icon}</span>
+            <span className="text-xs truncate flex-1">
+              <span className="font-medium">{link.text}</span>
+              <span className="text-muted-foreground mx-1">-</span>
+              <span className="text-muted-foreground font-mono text-[11px]">{link.url}</span>
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5 shrink-0 text-muted-foreground hover:text-destructive"
+              onClick={() => onRemove(link.id)}
+            >
+              <X className="h-3 w-3" />
+              <span className="sr-only">Remove link</span>
+            </Button>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+/* ─── Rich Text Field (shared by Heading + Paragraph) ─── */
+
+function RichTextField({
+  component,
+  onUpdate,
+  updateProps,
+  multiline,
+}: {
+  component: EmailComponent
+  onUpdate: (updates: Partial<EmailComponent>) => void
+  updateProps: (key: string, value: unknown) => void
+  multiline: boolean
+}) {
+  const inputRef = useRef<HTMLTextAreaElement & HTMLInputElement>(null)
+  const [showLinkCreator, setShowLinkCreator] = useState(false)
+  const { links, insertAtCursor, addLink, removeLink } = useRichText({ component, onUpdate, updateProps, inputRef })
+
+  const handleAddLink = (link: ParagraphLink) => {
+    addLink(link)
+    setShowLinkCreator(false)
   }
 
   return (
-    <div className="flex flex-col gap-1.5 rounded-md border bg-muted/50 p-2">
-      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Links</span>
-      {links.map((link) => (
-        <div key={link.id} className="flex items-center gap-2 rounded-md border bg-card px-2.5 py-1.5">
-          <span className="text-muted-foreground shrink-0">
-            {link.linkType === "web" && <Globe className="h-3.5 w-3.5" />}
-            {link.linkType === "email" && <Mail className="h-3.5 w-3.5" />}
-            {link.linkType === "telephone" && <Phone className="h-3.5 w-3.5" />}
-          </span>
-          <div className="flex flex-col min-w-0 flex-1">
-            <span className="text-xs font-medium truncate">{link.text || "Untitled"}</span>
-            <span className="text-[11px] text-muted-foreground font-mono truncate">
-              {link.url || <span className="italic">No URL set</span>}
-            </span>
-          </div>
-          <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">
-            {linkTypeLabels[link.linkType]}
-          </Badge>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
-            onClick={() => removeLink(link.id)}
-          >
-            <X className="h-3 w-3" />
-            <span className="sr-only">Remove link</span>
-          </Button>
+    <div className="flex flex-col gap-2">
+      {/* Variables + add link button */}
+      <div className="flex items-start gap-2">
+        <div className="flex-1">
+          <VariableChips onInsert={insertAtCursor} />
         </div>
-      ))}
+        <Button
+          variant={showLinkCreator ? "secondary" : "outline"}
+          size="sm"
+          className="h-6 text-[11px] gap-1 shrink-0"
+          onClick={() => setShowLinkCreator(!showLinkCreator)}
+        >
+          <Link2 className="h-3 w-3" />
+          Link
+        </Button>
+      </div>
+
+      {/* Link creator (inline, collapsible) */}
+      {showLinkCreator && (
+        <InlineLinkCreator onAdd={handleAddLink} onCancel={() => setShowLinkCreator(false)} />
+      )}
+
+      {/* Text input */}
+      {multiline ? (
+        <Textarea
+          ref={inputRef}
+          value={component.content}
+          onChange={(e) => onUpdate({ content: e.target.value })}
+          placeholder="Enter text... (use Enter for line breaks)"
+          className="min-h-[80px] text-sm resize-y"
+        />
+      ) : (
+        <Input
+          ref={inputRef}
+          value={component.content}
+          onChange={(e) => onUpdate({ content: e.target.value })}
+          placeholder="Enter text..."
+          className="h-8 text-sm"
+        />
+      )}
+
+      {/* Existing links */}
+      <LinksList links={links} onRemove={removeLink} />
     </div>
   )
 }
@@ -513,43 +437,23 @@ function HeadingEditor({
   onUpdate: (updates: Partial<EmailComponent>) => void
   updateProps: (key: string, value: unknown) => void
 }) {
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [linkDialogOpen, setLinkDialogOpen] = useState(false)
-  const { links, insertAtCursor, commitLink, updateLink, removeLink } = useRichTextEditor({
-    component,
-    onUpdate,
-    updateProps,
-    inputRef,
-  })
-
   return (
     <div className="flex flex-col gap-2">
-      <RichTextToolbar insertAtCursor={insertAtCursor} onAddLink={() => setLinkDialogOpen(true)} />
-      <div className="flex items-center gap-2">
-        <Select
-          value={String(component.props.level || 1)}
-          onValueChange={(val) => updateProps("level", Number(val))}
-        >
-          <SelectTrigger className="w-20 h-8 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="1">H1</SelectItem>
-            <SelectItem value="2">H2</SelectItem>
-            <SelectItem value="3">H3</SelectItem>
-            <SelectItem value="4">H4</SelectItem>
-          </SelectContent>
-        </Select>
-        <Input
-          ref={inputRef}
-          value={component.content}
-          onChange={(e) => onUpdate({ content: e.target.value })}
-          placeholder="Heading text"
-          className="h-8 text-sm"
-        />
-      </div>
-      <LinksEditor links={links} updateLink={updateLink} removeLink={removeLink} />
-      <AddLinkDialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen} onConfirm={commitLink} />
+      <Select
+        value={String(component.props.level || 1)}
+        onValueChange={(val) => updateProps("level", Number(val))}
+      >
+        <SelectTrigger className="w-20 h-7 text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="1">H1</SelectItem>
+          <SelectItem value="2">H2</SelectItem>
+          <SelectItem value="3">H3</SelectItem>
+          <SelectItem value="4">H4</SelectItem>
+        </SelectContent>
+      </Select>
+      <RichTextField component={component} onUpdate={onUpdate} updateProps={updateProps} multiline={false} />
     </div>
   )
 }
@@ -565,83 +469,38 @@ function ParagraphEditor({
   onUpdate: (updates: Partial<EmailComponent>) => void
   updateProps: (key: string, value: unknown) => void
 }) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const [linkDialogOpen, setLinkDialogOpen] = useState(false)
-  const { links, insertAtCursor, commitLink, updateLink, removeLink } = useRichTextEditor({
-    component,
-    onUpdate,
-    updateProps,
-    inputRef: textareaRef,
-  })
-
   return (
-    <div className="flex flex-col gap-2">
-      <RichTextToolbar insertAtCursor={insertAtCursor} onAddLink={() => setLinkDialogOpen(true)} />
-      <Textarea
-        ref={textareaRef}
-        value={component.content}
-        onChange={(e) => onUpdate({ content: e.target.value })}
-        placeholder="Paragraph text... (use Enter for line breaks)"
-        className="min-h-[80px] text-sm resize-y font-mono"
-      />
-      <LinksEditor links={links} updateLink={updateLink} removeLink={removeLink} />
-      <AddLinkDialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen} onConfirm={commitLink} />
-    </div>
+    <RichTextField component={component} onUpdate={onUpdate} updateProps={updateProps} multiline={true} />
   )
 }
 
 /* ─── List Editor ─── */
 
-function ListEditor({
-  items,
-  onChange,
-}: {
-  items: string[]
-  onChange: (items: string[]) => void
-}) {
+function ListEditor({ items, onChange }: { items: string[]; onChange: (items: string[]) => void }) {
   const updateItem = (index: number, value: string) => {
-    const newItems = [...items]
-    newItems[index] = value
-    onChange(newItems)
-  }
-
-  const removeItem = (index: number) => {
-    onChange(items.filter((_, i) => i !== index))
-  }
-
-  const addItem = () => {
-    onChange([...items, "New item"])
+    const next = [...items]
+    next[index] = value
+    onChange(next)
   }
 
   return (
     <div className="flex flex-col gap-1.5">
-      {items.map((item, index) => (
-        <div key={index} className="flex items-center gap-1.5">
-          <span className="text-muted-foreground text-xs w-4 text-right shrink-0">
-            {index + 1}.
-          </span>
-          <Input
-            value={item}
-            onChange={(e) => updateItem(index, e.target.value)}
-            className="h-7 text-sm"
-          />
+      {items.map((item, i) => (
+        <div key={i} className="flex items-center gap-1.5">
+          <span className="text-muted-foreground text-xs w-4 text-right shrink-0">{i + 1}.</span>
+          <Input value={item} onChange={(e) => updateItem(i, e.target.value)} className="h-7 text-sm" />
           <Button
             variant="ghost"
             size="icon"
             className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
-            onClick={() => removeItem(index)}
+            onClick={() => onChange(items.filter((_, j) => j !== i))}
           >
             <X className="h-3 w-3" />
             <span className="sr-only">Remove item</span>
           </Button>
         </div>
       ))}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-7 text-xs text-muted-foreground"
-        onClick={addItem}
-      >
+      <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={() => onChange([...items, "New item"])}>
         <Plus className="mr-1 h-3 w-3" />
         Add item
       </Button>
