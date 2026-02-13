@@ -41,6 +41,7 @@ function buildLinkHref(link: ParagraphLink): string {
 function processRichContent(content: string, links: ParagraphLink[], theme: EmailTheme): string {
   let processed = escapeHtml(content)
 
+  // Replace link placeholders
   for (const link of links) {
     const placeholder = escapeHtml(`[link:${link.id}]`)
     const href = escapeHtml(buildLinkHref(link))
@@ -48,6 +49,13 @@ function processRichContent(content: string, links: ParagraphLink[], theme: Emai
     processed = processed.replace(placeholder, linkHtml)
   }
 
+  // Inline formatting: bold **text**, italic *text*, underline __text__
+  // Process bold first (** before *), then underline, then italic
+  processed = processed.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+  processed = processed.replace(/__(.+?)__/g, "<u>$1</u>")
+  processed = processed.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, "<em>$1</em>")
+
+  // Line breaks
   processed = processed.replace(/\n/g, "<br>")
 
   return processed

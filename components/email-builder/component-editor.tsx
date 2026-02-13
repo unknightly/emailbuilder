@@ -39,6 +39,9 @@ import {
   Mail,
   Phone,
   MoreVertical,
+  Bold,
+  Italic,
+  Underline,
 } from "lucide-react"
 
 /* ─── Constants ─── */
@@ -234,26 +237,47 @@ function useRichText({
     [links, updateProps, component.content, onUpdate],
   )
 
-  return { links, insertAtCursor, addLink, removeLink }
-}
+  const wrapSelection = useCallback(
+    (prefix: string, suffix: string) => {
+      const el = inputRef.current
+      if (!el) return
+      const start = el.selectionStart ?? 0
+      const end = el.selectionEnd ?? 0
+      const text = component.content
+      const selected = text.slice(start, end)
 
-/* ─── Variable Chips ─── */
+      // If selection is already wrapped, unwrap it
+      const beforePrefix = text.slice(Math.max(0, start - prefix.length), start)
+      const afterSuffix = text.slice(end, end + suffix.length)
+      if (beforePrefix === prefix && afterSuffix === suffix) {
+        const newContent =
+          text.slice(0, start - prefix.length) + selected + text.slice(end + suffix.length)
+        onUpdate({ content: newContent })
+        requestAnimationFrame(() => {
+          el.selectionStart = start - prefix.length
+          el.selectionEnd = end - prefix.length
+          el.focus()
+        })
+        return
+      }
 
-function VariableChips({ onInsert }: { onInsert: (v: string) => void }) {
-  return (
-    <div className="flex items-center gap-1 flex-wrap">
-      {TEMPLATE_VARIABLES.map((v) => (
-        <button
-          key={v}
-          type="button"
-          onClick={() => onInsert(v)}
-          className="inline-flex items-center rounded-md border border-dashed border-border bg-muted/60 px-2 py-0.5 text-[11px] font-mono text-muted-foreground transition-colors hover:bg-accent hover:text-foreground hover:border-foreground/30"
-        >
-          {v}
-        </button>
-      ))}
-    </div>
+      const wrapped = prefix + selected + suffix
+      const newContent = text.slice(0, start) + wrapped + text.slice(end)
+      onUpdate({ content: newContent })
+      requestAnimationFrame(() => {
+        if (selected.length > 0) {
+          el.selectionStart = start + prefix.length
+          el.selectionEnd = end + prefix.length
+        } else {
+          el.selectionStart = el.selectionEnd = start + prefix.length
+        }
+        el.focus()
+      })
+    },
+    [component.content, onUpdate, inputRef],
   )
+
+  return { links, insertAtCursor, wrapSelection, addLink, removeLink }
 }
 
 /* ─── Inline Link Creator ─── */
@@ -371,7 +395,7 @@ function RichTextField({
 }) {
   const inputRef = useRef<HTMLTextAreaElement & HTMLInputElement>(null)
   const [showLinkCreator, setShowLinkCreator] = useState(false)
-  const { links, insertAtCursor, addLink, removeLink } = useRichText({ component, onUpdate, updateProps, inputRef })
+  const { links, insertAtCursor, wrapSelection, addLink, removeLink } = useRichText({ component, onUpdate, updateProps, inputRef })
 
   const handleAddLink = (link: ParagraphLink) => {
     addLink(link)
@@ -379,36 +403,89 @@ function RichTextField({
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      {/* Variables + add link button */}
-      <div className="flex items-start gap-2">
-        <div className="flex-1">
-          <VariableChips onInsert={insertAtCursor} />
-        </div>
-        <Button
-          variant={showLinkCreator ? "secondary" : "outline"}
-          size="sm"
-          className="h-6 text-[11px] gap-1 shrink-0"
-          onClick={() => setShowLinkCreator(!showLinkCreator)}
+    <div className="flex flex-col gap-0">
+      {/* Unified toolbar */}
+      <div className="flex items-center border rounded-t-md bg-muted/40 px-1.5 py-1 gap-px">
+        {/* Formatting group */}
+        <button
+          type="button"
+          title="Bold (**text**)"
+          onClick={() => wrapSelection("**", "**")}
+          className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
         >
-          <Link2 className="h-3 w-3" />
-          Link
-        </Button>
+          <Bold className="h-3.5 w-3.5" />
+          <span className="sr-only">Bold</span>
+        </button>
+        <button
+          type="button"
+          title="Italic (*text*)"
+          onClick={() => wrapSelection("*", "*")}
+          className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        >
+          <Italic className="h-3.5 w-3.5" />
+          <span className="sr-only">Italic</span>
+        </button>
+        <button
+          type="button"
+          title="Underline (__text__)"
+          onClick={() => wrapSelection("__", "__")}
+          className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        >
+          <Underline className="h-3.5 w-3.5" />
+          <span className="sr-only">Underline</span>
+        </button>
+
+        {/* Divider */}
+        <div className="w-px h-4 bg-border mx-1" />
+
+        {/* Link toggle */}
+        <button
+          type="button"
+          title="Insert link"
+          onClick={() => setShowLinkCreator(!showLinkCreator)}
+          className={`inline-flex items-center justify-center rounded h-7 w-7 transition-colors ${
+            showLinkCreator
+              ? "bg-foreground text-background"
+              : "text-muted-foreground hover:text-foreground hover:bg-accent"
+          }`}
+        >
+          <Link2 className="h-3.5 w-3.5" />
+          <span className="sr-only">Insert link</span>
+        </button>
+
+        {/* Divider */}
+        <div className="w-px h-4 bg-border mx-1" />
+
+        {/* Variable chips */}
+        <div className="flex items-center gap-1 flex-wrap ml-0.5">
+          {TEMPLATE_VARIABLES.map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => insertAtCursor(v)}
+              className="inline-flex items-center rounded border border-dashed border-border bg-background px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground transition-colors hover:bg-accent hover:text-foreground hover:border-foreground/30"
+            >
+              {v.replace("$", "")}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Link creator (inline, collapsible) */}
+      {/* Link creator (inline, slides in below toolbar) */}
       {showLinkCreator && (
-        <InlineLinkCreator onAdd={handleAddLink} onCancel={() => setShowLinkCreator(false)} />
+        <div className="border-x border-b bg-muted/20 p-2">
+          <InlineLinkCreator onAdd={handleAddLink} onCancel={() => setShowLinkCreator(false)} />
+        </div>
       )}
 
-      {/* Text input */}
+      {/* Text input - connects visually to toolbar */}
       {multiline ? (
         <Textarea
           ref={inputRef}
           value={component.content}
           onChange={(e) => onUpdate({ content: e.target.value })}
           placeholder="Enter text... (use Enter for line breaks)"
-          className="min-h-[80px] text-sm resize-y"
+          className={`min-h-[80px] text-sm resize-y rounded-t-none border-t-0 focus-visible:ring-0 focus-visible:ring-offset-0 ${showLinkCreator ? "" : ""}`}
         />
       ) : (
         <Input
@@ -416,12 +493,16 @@ function RichTextField({
           value={component.content}
           onChange={(e) => onUpdate({ content: e.target.value })}
           placeholder="Enter text..."
-          className="h-8 text-sm"
+          className="h-8 text-sm rounded-t-none border-t-0 focus-visible:ring-0 focus-visible:ring-offset-0"
         />
       )}
 
-      {/* Existing links */}
-      <LinksList links={links} onRemove={removeLink} />
+      {/* Existing links summary */}
+      {links.length > 0 && (
+        <div className="mt-2">
+          <LinksList links={links} onRemove={removeLink} />
+        </div>
+      )}
     </div>
   )
 }
