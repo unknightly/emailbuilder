@@ -42,6 +42,7 @@ import {
   Bold,
   Italic,
   Underline,
+  Braces,
 } from "lucide-react"
 
 /* ─── Constants ─── */
@@ -456,19 +457,30 @@ function RichTextField({
         {/* Divider */}
         <div className="w-px h-4 bg-border mx-1" />
 
-        {/* Variable chips */}
-        <div className="flex items-center gap-1 flex-wrap ml-0.5">
-          {TEMPLATE_VARIABLES.map((v) => (
+        {/* Variable dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <button
-              key={v}
               type="button"
-              onClick={() => insertAtCursor(v)}
-              className="inline-flex items-center rounded border border-dashed border-border bg-background px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground transition-colors hover:bg-accent hover:text-foreground hover:border-foreground/30"
+              title="Insert variable"
+              className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
             >
-              {v.replace("$", "")}
+              <Braces className="h-3.5 w-3.5" />
+              <span className="sr-only">Insert variable</span>
             </button>
-          ))}
-        </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            {TEMPLATE_VARIABLES.map((v) => (
+              <DropdownMenuItem
+                key={v}
+                onClick={() => insertAtCursor(v)}
+                className="font-mono text-xs"
+              >
+                {v}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Link creator (inline, slides in below toolbar) */}
