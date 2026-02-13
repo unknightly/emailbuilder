@@ -7,6 +7,16 @@ import { generateEmailHTML } from "@/lib/email-html-generator"
 import { BuilderPanel } from "./builder-panel"
 import { PreviewPanel } from "./preview-panel"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -88,21 +98,30 @@ export function EmailBuilder() {
   }, [])
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [downloadDialogOpen, setDownloadDialogOpen] = useState(false)
+  const [downloadFileName, setDownloadFileName] = useState("")
 
   const html = useMemo(() => generateEmailHTML(sections, theme), [sections, theme])
 
+  const openDownloadDialog = useCallback(() => {
+    setDownloadFileName(`email-template-${new Date().toISOString().slice(0, 10)}`)
+    setDownloadDialogOpen(true)
+  }, [])
+
   const handleDownload = useCallback(() => {
+    const name = downloadFileName.trim() || `email-template-${new Date().toISOString().slice(0, 10)}`
     const data = JSON.stringify({ sections, theme }, null, 2)
     const blob = new Blob([data], { type: "application/json" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `email-template-${new Date().toISOString().slice(0, 10)}.json`
+    a.download = `${name}.json`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
-  }, [sections])
+    setDownloadDialogOpen(false)
+  }, [sections, theme, downloadFileName])
 
   const handleUpload = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -166,13 +185,47 @@ export function EmailBuilder() {
             variant="outline"
             size="sm"
             className="h-8 text-xs gap-1.5"
-            onClick={handleDownload}
+            onClick={openDownloadDialog}
           >
             <Download className="h-3.5 w-3.5" />
             Download
           </Button>
         </div>
       </header>
+
+      {/* Download dialog */}
+      <Dialog open={downloadDialogOpen} onOpenChange={setDownloadDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base">Download Template</DialogTitle>
+            <DialogDescription>Choose a file name for your email template.</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-1.5 py-2">
+            <Label htmlFor="filename" className="text-xs font-medium">File name</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="filename"
+                value={downloadFileName}
+                onChange={(e) => setDownloadFileName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") handleDownload() }}
+                placeholder="email-template"
+                className="text-sm"
+                autoFocus
+              />
+              <span className="text-sm text-muted-foreground shrink-0">.json</span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setDownloadDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={handleDownload}>
+              <Download className="h-3.5 w-3.5" />
+              Download
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Main content */}
       <div className="flex-1 overflow-hidden">
