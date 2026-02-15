@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import { AppHeader } from "@/components/email-builder/app-header"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Copy, Check, Trash2, Plus } from "lucide-react"
+import { Copy, Check, Trash2 } from "lucide-react"
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -152,7 +152,7 @@ img {
 &lt;/body&gt;
 &lt;/html&gt;`
 
-// Pure string-based entity decoder (no DOM needed, works on server + client)
+// Pure string-based entity decoder -- SSR safe, no DOM access
 function decodeEntities(str: string): string {
   return str
     .replace(/&amp;/g, "&")
@@ -173,247 +173,497 @@ function encodeEntities(str: string): string {
     .replace(/'/g, "&#39;")
 }
 
-// Inject interactive editing styles + scripts into the iframe
+// Build interactive iframe document with inline editing, component type popup, and edit icons
 function buildInteractiveDoc(html: string): string {
-  const editStyles = `
-<style>
-  [data-editable]:hover {
-    outline: 2px solid #1a73e8 !important;
-    outline-offset: 2px !important;
-    cursor: text !important;
-  }
-  [data-editable]:focus {
-    outline: 2px solid #1a73e8 !important;
-    outline-offset: 2px !important;
-    background: rgba(26,115,232,0.04) !important;
-  }
-  img[data-editable-img]:hover {
-    outline: 2px solid #1a73e8 !important;
-    outline-offset: 2px !important;
-    cursor: pointer !important;
-  }
-  .v0-add-zone {
-    position: relative;
-    height: 16px;
-    margin: 0;
-    padding: 0;
-  }
-  .v0-add-btn {
-    display: none;
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    padding: 3px 10px;
-    font-size: 11px;
-    font-family: system-ui, sans-serif;
-    background: #1a73e8;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    white-space: nowrap;
-    z-index: 100;
-  }
-  .v0-add-zone:hover .v0-add-btn {
-    display: block;
-  }
-  .v0-add-zone:hover {
-    background: rgba(26,115,232,0.06);
-    border-radius: 4px;
-  }
+  const injectedStyles = `
+<style data-v0-editor>
+/* Hover highlight for all editable elements */
+[data-v0-el] {
+  position: relative;
+  transition: outline 0.1s;
+}
+[data-v0-el]:hover {
+  outline: 2px solid #1a73e8 !important;
+  outline-offset: 2px !important;
+}
+[data-v0-el]:focus {
+  outline: 2px solid #1a73e8 !important;
+  outline-offset: 2px !important;
+  background: rgba(26,115,232,0.04) !important;
+}
+img[data-v0-img]:hover {
+  outline: 2px solid #1a73e8 !important;
+  outline-offset: 2px !important;
+  cursor: pointer !important;
+}
+
+/* Edit icon on hover */
+.v0-edit-btn {
+  display: none;
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 22px;
+  height: 22px;
+  background: #1a73e8;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  z-index: 50;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.v0-edit-btn svg { width: 12px; height: 12px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+[data-v0-el]:hover > .v0-edit-btn,
+[data-v0-wrapper]:hover > .v0-edit-btn { display: flex; }
+
+/* Edit menu popup */
+.v0-edit-menu {
+  position: absolute;
+  top: 26px;
+  right: 2px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  padding: 4px;
+  z-index: 200;
+  min-width: 140px;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+.v0-edit-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #333;
+  cursor: pointer;
+  border-radius: 4px;
+  text-align: left;
+}
+.v0-edit-menu button:hover { background: #f0f4ff; color: #1a73e8; }
+
+/* Add zone between components */
+.v0-add-zone {
+  position: relative;
+  height: 4px;
+  margin: 0;
+  transition: height 0.15s, background 0.15s;
+}
+.v0-add-zone:hover {
+  height: 28px;
+  background: rgba(26,115,232,0.06);
+  border-radius: 4px;
+}
+.v0-add-btn {
+  display: none;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 3px 12px;
+  font-size: 11px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-weight: 500;
+  background: #1a73e8;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  z-index: 100;
+}
+.v0-add-zone:hover .v0-add-btn { display: block; }
+
+/* Component type picker popup */
+.v0-type-popup {
+  position: fixed;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+  padding: 6px;
+  z-index: 500;
+  min-width: 160px;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+.v0-type-popup button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+  border-radius: 5px;
+  text-align: left;
+}
+.v0-type-popup button:hover { background: #f0f4ff; color: #1a73e8; }
+.v0-type-popup .v0-type-icon { width: 16px; height: 16px; opacity: 0.6; }
+
+/* Overlay backdrop */
+.v0-overlay { position: fixed; inset: 0; z-index: 400; }
 </style>`
 
-  const editScript = `
-<script>
+  const injectedScript = `
+<script data-v0-editor>
 (function() {
-  // Make text elements editable
-  var selectors = 'p, h1, h2, h3, h4, h5, h6, li';
-  document.querySelectorAll(selectors).forEach(function(el) {
-    // Skip if inside a spacer/add zone
-    if (el.closest('.v0-add-zone')) return;
+  var PENCIL_SVG = '<svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
+
+  // ── Helpers ──
+  function makeEditable(el) {
+    el.setAttribute('data-v0-el', '');
     el.setAttribute('contenteditable', 'true');
-    el.setAttribute('data-editable', 'true');
+    el.style.position = 'relative';
+    addEditButton(el);
+  }
+
+  function addEditButton(el) {
+    var btn = document.createElement('button');
+    btn.className = 'v0-edit-btn';
+    btn.innerHTML = PENCIL_SVG;
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      showEditMenu(el, btn);
+    });
+    el.appendChild(btn);
+  }
+
+  function showEditMenu(el, anchor) {
+    closeAllMenus();
+    var menu = document.createElement('div');
+    menu.className = 'v0-edit-menu';
+    menu.setAttribute('data-v0-menu', '');
+
+    var tag = el.tagName.toLowerCase();
+
+    if (tag.match(/^h[1-6]$/)) {
+      // Heading: change level
+      ['H2','H3','H4'].forEach(function(level) {
+        var b = document.createElement('button');
+        b.textContent = 'Change to ' + level;
+        if (el.tagName === level) b.style.fontWeight = '700';
+        b.addEventListener('click', function(ev) {
+          ev.stopPropagation();
+          changeTag(el, level.toLowerCase());
+          closeAllMenus();
+        });
+        menu.appendChild(b);
+      });
+    } else if (tag === 'ul' || el.querySelector('ul')) {
+      // List: add item
+      var addBtn = document.createElement('button');
+      addBtn.textContent = 'Add list item';
+      addBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var ul = tag === 'ul' ? el : el.querySelector('ul');
+        if (ul) {
+          var li = document.createElement('li');
+          li.style.cssText = 'padding:2px 0;font-size:14px;line-height:20px;color:#333333;font-family:Helvetica, Arial, sans-serif;';
+          li.textContent = 'New item';
+          li.setAttribute('contenteditable', 'true');
+          li.setAttribute('data-v0-el', '');
+          ul.appendChild(li);
+          li.focus();
+          syncToParent();
+        }
+        closeAllMenus();
+      });
+      menu.appendChild(addBtn);
+
+      var removeBtn = document.createElement('button');
+      removeBtn.textContent = 'Remove last item';
+      removeBtn.style.color = '#d32f2f';
+      removeBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var ul = tag === 'ul' ? el : el.querySelector('ul');
+        if (ul && ul.lastElementChild) {
+          ul.lastElementChild.remove();
+          syncToParent();
+        }
+        closeAllMenus();
+      });
+      menu.appendChild(removeBtn);
+    } else if (tag === 'p') {
+      var delBtn = document.createElement('button');
+      delBtn.textContent = 'Delete paragraph';
+      delBtn.style.color = '#d32f2f';
+      delBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        el.remove();
+        syncToParent();
+        closeAllMenus();
+      });
+      menu.appendChild(delBtn);
+    } else if (tag === 'img' || el.querySelector('img')) {
+      var imgEl = tag === 'img' ? el : el.querySelector('img');
+      var srcBtn = document.createElement('button');
+      srcBtn.textContent = 'Change image URL';
+      srcBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var ns = prompt('Image URL:', imgEl.src);
+        if (ns) { imgEl.src = ns; syncToParent(); }
+        closeAllMenus();
+      });
+      menu.appendChild(srcBtn);
+    }
+
+    // Always add a delete option
+    if (tag !== 'p' && tag !== 'li') {
+      var del2 = document.createElement('button');
+      del2.textContent = 'Delete component';
+      del2.style.color = '#d32f2f';
+      del2.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        el.remove();
+        syncToParent();
+        closeAllMenus();
+      });
+      menu.appendChild(del2);
+    }
+
+    el.appendChild(menu);
+
+    // Close on click outside
+    setTimeout(function() {
+      document.addEventListener('click', closeAllMenus, { once: true });
+    }, 10);
+  }
+
+  function changeTag(el, newTag) {
+    var newEl = document.createElement(newTag);
+    newEl.innerHTML = el.innerHTML;
+    // Copy base style but update font-size
+    var sizes = { h2: '22px', h3: '18px', h4: '16px' };
+    var lineHeights = { h2: '28px', h3: '24px', h4: '22px' };
+    newEl.style.cssText = 'margin:0;padding:0 0 12px 0;font-size:' + (sizes[newTag]||'18px') + ';line-height:' + (lineHeights[newTag]||'24px') + ';font-weight:bold;color:#333333;font-family:Helvetica, Arial, sans-serif;';
+    newEl.setAttribute('data-v0-el', '');
+    newEl.setAttribute('contenteditable', 'true');
+    newEl.style.position = 'relative';
+    addEditButton(newEl);
+    el.replaceWith(newEl);
+    syncToParent();
+  }
+
+  function closeAllMenus() {
+    document.querySelectorAll('[data-v0-menu]').forEach(function(m) { m.remove(); });
+    document.querySelectorAll('.v0-type-popup').forEach(function(m) { m.remove(); });
+    document.querySelectorAll('.v0-overlay').forEach(function(m) { m.remove(); });
+  }
+
+  // ── Init editable elements ──
+  document.querySelectorAll('p, h1, h2, h3, h4, h5, h6').forEach(function(el) {
+    if (el.closest('.v0-add-zone') || el.closest('.v0-type-popup') || el.closest('.v0-edit-menu')) return;
+    makeEditable(el);
   });
 
-  // Mark images as editable
+  document.querySelectorAll('li').forEach(function(el) {
+    el.setAttribute('data-v0-el', '');
+    el.setAttribute('contenteditable', 'true');
+  });
+
+  // Wrap list tables + images in a relative container for the edit button
+  document.querySelectorAll('table').forEach(function(tbl) {
+    if (tbl.querySelector('ul') || tbl.querySelector('ol')) {
+      tbl.style.position = 'relative';
+      tbl.setAttribute('data-v0-wrapper', '');
+      addEditButton(tbl);
+    }
+  });
+
   document.querySelectorAll('img').forEach(function(img) {
-    img.setAttribute('data-editable-img', 'true');
+    img.setAttribute('data-v0-img', '');
+    img.style.cursor = 'pointer';
     img.addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
-      var newSrc = prompt('Enter new image URL:', img.src);
-      if (newSrc && newSrc !== img.src) {
-        img.src = newSrc;
-        syncToParent();
-      }
+      var ns = prompt('Enter new image URL:', img.src);
+      if (ns && ns !== img.src) { img.src = ns; syncToParent(); }
     });
   });
 
-  // Insert add-zones between content elements inside body-text
-  var bodyText = document.querySelector('.body-text');
-  if (bodyText) {
-    var children = Array.from(bodyText.children).filter(function(c) {
-      return !c.classList.contains('v0-add-zone');
+  // ── Add zones between content elements ──
+  function insertAddZones(container) {
+    if (!container) return;
+    var kids = Array.from(container.children).filter(function(c) { return !c.classList.contains('v0-add-zone'); });
+    // Add zone before first child
+    container.insertBefore(createAddZone(container, null, kids[0]), kids[0] || null);
+    // Add zones after each child
+    kids.forEach(function(kid) {
+      var zone = createAddZone(container, kid, kid.nextSibling);
+      kid.after(zone);
     });
-    for (var i = 0; i < children.length; i++) {
-      var zone = document.createElement('div');
-      zone.className = 'v0-add-zone';
-      var btn = document.createElement('button');
-      btn.className = 'v0-add-btn';
-      btn.textContent = '+ Add Component';
-      btn.setAttribute('data-insert-after', String(i));
-      btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        var idx = parseInt(this.getAttribute('data-insert-after'));
-        handleAdd(idx);
-      });
-      zone.appendChild(btn);
-      children[i].after(zone);
-    }
   }
 
-  // Also add a zone at the very top of body-text
-  if (bodyText && bodyText.firstElementChild && !bodyText.firstElementChild.classList.contains('v0-add-zone')) {
-    var topZone = document.createElement('div');
-    topZone.className = 'v0-add-zone';
-    var topBtn = document.createElement('button');
-    topBtn.className = 'v0-add-btn';
-    topBtn.textContent = '+ Add Component';
-    topBtn.setAttribute('data-insert-after', '-1');
-    topBtn.addEventListener('click', function(e) {
+  function createAddZone(container, afterEl, beforeEl) {
+    var zone = document.createElement('div');
+    zone.className = 'v0-add-zone';
+    var btn = document.createElement('button');
+    btn.className = 'v0-add-btn';
+    btn.textContent = '+ Add Component';
+    btn.addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
-      handleAdd(-1);
+      showTypePopup(e, container, zone);
     });
-    topZone.appendChild(topBtn);
-    bodyText.insertBefore(topZone, bodyText.firstElementChild);
+    zone.appendChild(btn);
+    return zone;
   }
 
-  function handleAdd(afterIdx) {
-    var type = prompt('Component type: paragraph, heading, or image', 'paragraph');
-    if (!type) return;
-    type = type.trim().toLowerCase();
+  function showTypePopup(evt, container, afterZone) {
+    closeAllMenus();
 
+    // Overlay to catch outside clicks
+    var overlay = document.createElement('div');
+    overlay.className = 'v0-overlay';
+    overlay.addEventListener('click', function(e) { e.stopPropagation(); closeAllMenus(); });
+    document.body.appendChild(overlay);
+
+    var popup = document.createElement('div');
+    popup.className = 'v0-type-popup';
+
+    var types = [
+      { label: 'Heading', tag: 'h3' },
+      { label: 'Paragraph', tag: 'p' },
+      { label: 'Image', tag: 'img' },
+      { label: 'List', tag: 'ul' },
+    ];
+
+    types.forEach(function(t) {
+      var b = document.createElement('button');
+      b.textContent = t.label;
+      b.addEventListener('click', function(e) {
+        e.stopPropagation();
+        insertComponent(t.tag, container, afterZone);
+        closeAllMenus();
+      });
+      popup.appendChild(b);
+    });
+
+    // Position near the button
+    var rect = afterZone.getBoundingClientRect();
+    popup.style.left = (rect.left + rect.width / 2 - 80) + 'px';
+    popup.style.top = (rect.bottom + 4) + 'px';
+    document.body.appendChild(popup);
+  }
+
+  function insertComponent(tag, container, afterZone) {
     var newEl;
-    if (type === 'heading' || type === 'h3') {
-      var text = prompt('Heading text:', 'New heading');
-      if (!text) return;
+    if (tag === 'h3') {
       newEl = document.createElement('h3');
       newEl.style.cssText = 'margin:0;padding:0 0 12px 0;font-size:18px;line-height:24px;font-weight:bold;color:#333333;font-family:Helvetica, Arial, sans-serif;';
-      newEl.textContent = text;
-      newEl.setAttribute('contenteditable', 'true');
-      newEl.setAttribute('data-editable', 'true');
-    } else if (type === 'image' || type === 'img') {
+      newEl.textContent = 'New heading';
+      makeEditable(newEl);
+    } else if (tag === 'p') {
+      newEl = document.createElement('p');
+      newEl.style.cssText = 'margin:0;padding:0 0 12px 0;font-size:14px;line-height:20px;color:#333333;font-family:Helvetica, Arial, sans-serif;';
+      newEl.textContent = 'New paragraph text...';
+      makeEditable(newEl);
+    } else if (tag === 'img') {
       var src = prompt('Image URL:', 'https://placehold.co/400x200');
       if (!src) return;
       newEl = document.createElement('img');
       newEl.src = src;
       newEl.alt = 'Image';
       newEl.style.cssText = 'display:block;max-width:100%;height:auto;padding:0 0 12px 0;';
-      newEl.setAttribute('data-editable-img', 'true');
+      newEl.setAttribute('data-v0-img', '');
       newEl.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
         var ns = prompt('Enter new image URL:', newEl.src);
-        if (ns && ns !== newEl.src) { newEl.src = ns; syncToParent(); }
+        if (ns) { newEl.src = ns; syncToParent(); }
       });
-    } else {
-      var pText = prompt('Paragraph text:', 'New paragraph');
-      if (!pText) return;
-      newEl = document.createElement('p');
-      newEl.style.cssText = 'margin:0;padding:0 0 12px 0;font-size:14px;line-height:20px;color:#333333;font-family:Helvetica, Arial, sans-serif;';
-      newEl.textContent = pText;
-      newEl.setAttribute('contenteditable', 'true');
-      newEl.setAttribute('data-editable', 'true');
+    } else if (tag === 'ul') {
+      // Wrap in a table like the builder does
+      var tbl = document.createElement('table');
+      tbl.setAttribute('border','0');
+      tbl.setAttribute('cellpadding','0');
+      tbl.setAttribute('cellspacing','0');
+      tbl.setAttribute('width','100%');
+      tbl.style.cssText = 'padding:0 0 12px 0;';
+      tbl.innerHTML = '<tr><td><ul style="margin:0;padding:0 0 0 24px;"><li style="padding:2px 0;font-size:14px;line-height:20px;color:#333333;font-family:Helvetica, Arial, sans-serif;" contenteditable="true" data-v0-el>Item 1</li><li style="padding:2px 0;font-size:14px;line-height:20px;color:#333333;font-family:Helvetica, Arial, sans-serif;" contenteditable="true" data-v0-el>Item 2</li></ul></td></tr>';
+      tbl.style.position = 'relative';
+      tbl.setAttribute('data-v0-wrapper', '');
+      addEditButton(tbl);
+      newEl = tbl;
     }
 
-    var bt = document.querySelector('.body-text');
-    if (!bt) return;
+    if (!newEl) return;
 
-    // Get content children (skip add zones)
-    var contentKids = Array.from(bt.children).filter(function(c) { return !c.classList.contains('v0-add-zone'); });
-
-    if (afterIdx < 0) {
-      bt.insertBefore(newEl, bt.firstElementChild);
-    } else if (afterIdx < contentKids.length) {
-      contentKids[afterIdx].after(newEl);
-    } else {
-      bt.appendChild(newEl);
-    }
-
-    // Add a new zone after the new element
-    var nz = document.createElement('div');
-    nz.className = 'v0-add-zone';
-    var nb = document.createElement('button');
-    nb.className = 'v0-add-btn';
-    nb.textContent = '+ Add Component';
-    nb.addEventListener('click', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      // Simple: just add after this new element
-      var allContent = Array.from(bt.children).filter(function(c) { return !c.classList.contains('v0-add-zone'); });
-      var myIdx = allContent.indexOf(newEl);
-      handleAdd(myIdx);
-    });
-    nz.appendChild(nb);
+    // Insert after the add zone, then add a new zone after the element
+    afterZone.after(newEl);
+    var nz = createAddZone(container, newEl, newEl.nextSibling);
     newEl.after(nz);
+
+    // Focus text elements
+    if (tag === 'h3' || tag === 'p') newEl.focus();
 
     syncToParent();
   }
 
-  // Sync edits back to parent
-  function syncToParent() {
-    // Remove add zones before serializing
-    var clone = document.documentElement.cloneNode(true);
-    clone.querySelectorAll('.v0-add-zone').forEach(function(z) { z.remove(); });
-    clone.querySelectorAll('[data-editable]').forEach(function(el) {
-      el.removeAttribute('contenteditable');
-      el.removeAttribute('data-editable');
-    });
-    clone.querySelectorAll('[data-editable-img]').forEach(function(el) {
-      el.removeAttribute('data-editable-img');
-    });
-    // Remove the injected style and script
-    clone.querySelectorAll('style').forEach(function(s) {
-      if (s.textContent.indexOf('v0-add-zone') !== -1) s.remove();
-    });
-    clone.querySelectorAll('script').forEach(function(s) { s.remove(); });
+  // Apply add zones to body-text
+  var bodyText = document.querySelector('.body-text');
+  insertAddZones(bodyText);
 
-    var cleanHtml = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">\\n' + clone.outerHTML;
-    window.parent.postMessage({ type: 'v0-live-editor-sync', html: cleanHtml }, '*');
+  // ── Sync back to parent ──
+  function syncToParent() {
+    var clone = document.documentElement.cloneNode(true);
+    // Remove all editor UI
+    clone.querySelectorAll('.v0-add-zone, .v0-edit-btn, .v0-edit-menu, .v0-type-popup, .v0-overlay, [data-v0-editor]').forEach(function(z) { z.remove(); });
+    clone.querySelectorAll('[data-v0-el]').forEach(function(el) {
+      el.removeAttribute('contenteditable');
+      el.removeAttribute('data-v0-el');
+      el.style.removeProperty('position');
+    });
+    clone.querySelectorAll('[data-v0-img]').forEach(function(el) {
+      el.removeAttribute('data-v0-img');
+      el.style.removeProperty('cursor');
+    });
+    clone.querySelectorAll('[data-v0-wrapper]').forEach(function(el) {
+      el.removeAttribute('data-v0-wrapper');
+      el.style.removeProperty('position');
+    });
+    var html = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">\\n' + clone.outerHTML;
+    window.parent.postMessage({ type: 'v0-live-editor-sync', html: html }, '*');
   }
 
-  // Sync on blur (text edit finished)
+  // Sync on blur
   document.addEventListener('blur', function(e) {
-    if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-editable')) {
+    if (e.target && e.target.hasAttribute && (e.target.hasAttribute('data-v0-el'))) {
       syncToParent();
     }
   }, true);
 
-  // Also sync on input for more responsiveness
+  // Debounced sync on input
+  var _syncTimer;
   document.addEventListener('input', function(e) {
-    if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-editable')) {
-      // Debounce
-      clearTimeout(window._v0SyncTimer);
-      window._v0SyncTimer = setTimeout(syncToParent, 500);
+    if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-v0-el')) {
+      clearTimeout(_syncTimer);
+      _syncTimer = setTimeout(syncToParent, 400);
     }
   }, true);
 })();
 <\/script>`
 
-  // Inject styles before </head> and script before </body>
   let result = html
   if (result.includes("</head>")) {
-    result = result.replace("</head>", editStyles + "\n</head>")
+    result = result.replace("</head>", injectedStyles + "\n</head>")
   } else {
-    result = editStyles + result
+    result = injectedStyles + result
   }
   if (result.includes("</body>")) {
-    result = result.replace("</body>", editScript + "\n</body>")
+    result = result.replace("</body>", injectedScript + "\n</body>")
   } else {
-    result = result + editScript
+    result = result + injectedScript
   }
   return result
 }
@@ -423,10 +673,7 @@ export default function LiveEditorPage() {
   const [copied, setCopied] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
-  // Decode entities using pure string replacement (SSR-safe)
   const decodedHtml = useMemo(() => decodeEntities(entitiesCode), [entitiesCode])
-
-  // Build iframe doc with interactive editing injected
   const iframeSrcDoc = useMemo(() => buildInteractiveDoc(decodedHtml), [decodedHtml])
 
   // Listen for sync messages from iframe
@@ -487,7 +734,7 @@ export default function LiveEditorPage() {
       </AppHeader>
 
       <ResizablePanelGroup direction="horizontal" className="flex-1" id="live-editor-panels">
-        <ResizablePanel defaultSize={50} minSize={30} id="entities-editor" order={1}>
+        <ResizablePanel defaultSize={50} minSize={25} id="entities-editor" order={1}>
           <div className="h-full flex flex-col">
             <div className="flex items-center justify-between border-b px-4 py-3">
               <h2 className="text-sm font-semibold tracking-tight">HTML Entities Code</h2>
@@ -514,14 +761,12 @@ export default function LiveEditorPage() {
 
         <ResizableHandle withHandle />
 
-        <ResizablePanel defaultSize={50} minSize={30} id="live-preview" order={2}>
+        <ResizablePanel defaultSize={50} minSize={25} id="live-preview" order={2}>
           <div className="h-full flex flex-col">
             <div className="flex items-center justify-between border-b px-4 py-3">
-              <h2 className="text-sm font-semibold tracking-tight">
-                Live Preview
-              </h2>
-              <span className="text-[11px] text-muted-foreground">
-                Click text to edit, hover between elements to add
+              <h2 className="text-sm font-semibold tracking-tight">Live Preview</h2>
+              <span className="text-[10px] text-muted-foreground">
+                Click text to edit / hover between elements to add
               </span>
             </div>
             <iframe
