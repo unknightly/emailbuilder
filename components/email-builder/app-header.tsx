@@ -2,10 +2,11 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Mail, Menu, X, LayoutDashboard, FileJson } from "lucide-react"
+import { Mail, Menu, X, LayoutDashboard, FileJson, Code2 } from "lucide-react"
 
 const NAV_ITEMS = [
   { href: "/", label: "Email Builder", icon: Mail },
+  { href: "/live-editor", label: "Live Editor", icon: Code2 },
   { href: "/architecture", label: "Architecture Diagram", icon: LayoutDashboard },
   { href: "/architecture/schema", label: "JSON Schema", icon: FileJson },
 ]
@@ -27,7 +28,7 @@ export function AppHeader({
           <button
             type="button"
             onClick={() => setMenuOpen(!menuOpen)}
-            className="flex h-8 w-8 items-center justify-center rounded-md bg-foreground text-background transition-colors hover:bg-foreground/90"
+            className="flex h-8 w-8 items-center justify-center rounded-md bg-background text-foreground border transition-colors hover:bg-accent"
             aria-label="Toggle navigation menu"
           >
             {menuOpen ? (
