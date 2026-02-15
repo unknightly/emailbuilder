@@ -721,33 +721,23 @@ export default function LiveEditorPage() {
 
   return (
     <div className="flex h-screen flex-col bg-background">
-      <AppHeader currentPath="/live-editor">
-        <div className="ml-auto">
-          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={copyToClipboard}>
-            {copied ? (
-              <>
-                <Check className="h-3.5 w-3.5" />
-                Copied
-              </>
-            ) : (
-              <>
-                <Copy className="h-3.5 w-3.5" />
-                Copy HTML
-              </>
-            )}
-          </Button>
-        </div>
-      </AppHeader>
+      <AppHeader currentPath="/live-editor" />
 
       <ResizablePanelGroup direction="horizontal" className="flex-1" id="live-editor-panels">
         <ResizablePanel defaultSize={50} minSize={25} id="entities-editor" order={1}>
           <div className="h-full flex flex-col">
             <div className="flex items-center justify-between border-b px-4 py-3">
-              <h2 className="text-sm font-semibold tracking-tight">HTML Entities Code</h2>
-              <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5 text-muted-foreground" onClick={clearCode}>
-                <Trash2 className="h-3 w-3" />
-                Clear
-              </Button>
+              <h2 className="text-sm font-semibold tracking-tight">HTML Entities</h2>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5 text-muted-foreground" onClick={copyToClipboard}>
+                  {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                  {copied ? "Copied" : "Copy"}
+                </Button>
+                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5 text-muted-foreground" onClick={clearCode}>
+                  <Trash2 className="h-3 w-3" />
+                  Clear
+                </Button>
+              </div>
             </div>
             <div className="flex-1 overflow-hidden">
               <Textarea
