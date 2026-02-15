@@ -295,14 +295,22 @@ function buildInteractiveDoc(html: string): string {
     });
   }
 
+  function getCleanText(el) {
+    var clone = el.cloneNode(true);
+    clone.querySelectorAll('.v0-edit-btn, .v0-tag-label').forEach(function(x) { x.remove(); });
+    return clone;
+  }
+
   function openEditModal(el) {
     var type = el.getAttribute('data-v0-type');
     var i = el.getAttribute('data-v0-idx');
     var data = { type: type, elIndex: i };
     if (type === 'paragraph') {
-      data.content = el.innerHTML.replace(/<br\\s*\\/?>/gi, '\\n').replace(/<[^>]+>/g, '');
+      var clean = getCleanText(el);
+      data.content = clean.innerHTML.replace(/<br\\s*\\/?>/gi, '\\n').replace(/<[^>]+>/g, '');
     } else if (type === 'heading') {
-      data.content = el.textContent || '';
+      var cleanH = getCleanText(el);
+      data.content = cleanH.textContent || '';
       data.tag = el.tagName.toLowerCase();
     } else if (type === 'image') {
       var img = el.tagName === 'IMG' ? el : el.querySelector('img');
@@ -780,10 +788,10 @@ export default function LiveEditorPage() {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex flex-col gap-3 py-1">
+          <div className="flex flex-col gap-3 pt-2 pb-1">
             {/* ── Paragraph ── */}
             {modal?.type === "paragraph" && (
-              <>
+              <div className="flex flex-col gap-0">
                 <div className="flex items-center border rounded-t-md bg-muted/40 px-1.5 py-1 gap-px">
                   <button type="button" title="Bold" onClick={() => wrapSelection("**", "**")} className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
                     <Bold className="h-3.5 w-3.5" />
@@ -817,7 +825,7 @@ export default function LiveEditorPage() {
                   placeholder="Enter paragraph text... (use Enter for line breaks)"
                   className="min-h-[100px] text-sm resize-y rounded-t-none border-t-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
-              </>
+              </div>
             )}
 
             {/* ── Heading ── */}
@@ -839,29 +847,31 @@ export default function LiveEditorPage() {
                     ))}
                   </div>
                 </div>
-                <div className="flex items-center border rounded-t-md bg-muted/40 px-1.5 py-1 gap-px">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button type="button" title="Insert variable" className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-                        <Braces className="h-3.5 w-3.5" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-48">
-                      {TEMPLATE_VARIABLES.map((v) => (
-                        <DropdownMenuItem key={v} onClick={() => insertVariable(v)} className="font-mono text-xs">
-                          {v}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                <div className="flex flex-col gap-0">
+                  <div className="flex items-center border rounded-t-md bg-muted/40 px-1.5 py-1 gap-px">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button type="button" title="Insert variable" className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                          <Braces className="h-3.5 w-3.5" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-48">
+                        {TEMPLATE_VARIABLES.map((v) => (
+                          <DropdownMenuItem key={v} onClick={() => insertVariable(v)} className="font-mono text-xs">
+                            {v}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  <Input
+                    ref={textareaRef as unknown as React.Ref<HTMLInputElement>}
+                    value={modal.content}
+                    onChange={(e) => setModal({ ...modal, content: e.target.value })}
+                    placeholder="Heading text..."
+                    className="h-9 text-sm rounded-t-none border-t-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
                 </div>
-                <Input
-                  ref={textareaRef as unknown as React.Ref<HTMLInputElement>}
-                  value={modal.content}
-                  onChange={(e) => setModal({ ...modal, content: e.target.value })}
-                  placeholder="Heading text..."
-                  className="h-9 text-sm rounded-t-none border-t-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                />
               </>
             )}
 
