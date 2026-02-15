@@ -1,15 +1,24 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import { AppHeader } from "@/components/email-builder/app-header"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Copy, Check, Trash2 } from "lucide-react"
+import { Copy, Check, Trash2, Plus } from "lucide-react"
 import {
   ResizablePanelGroup,
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 const DEFAULT_ENTITIES_CODE = `&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot; &quot;http://www.w3.org/TR/html4/loose.dtd&quot;&gt;
 &lt;html lang=&quot;en&quot;&gt;
@@ -155,6 +164,11 @@ img {
 export default function LiveEditorPage() {
   const [entitiesCode, setEntitiesCode] = useState(DEFAULT_ENTITIES_CODE)
   const [copied, setCopied] = useState(false)
+  const [hoveredElement, setHoveredElement] = useState<HTMLElement | null>(null)
+  const [editingElement, setEditingElement] = useState<HTMLElement | null>(null)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editValue, setEditValue] = useState("")
+  const previewRef = useRef<HTMLDivElement>(null)
 
   // Decode HTML entities to actual HTML
   const decodedHtml = useMemo(() => {
@@ -183,6 +197,104 @@ export default function LiveEditorPage() {
   const clearCode = useCallback(() => {
     setEntitiesCode("")
   }, [])
+
+  // Encode HTML back to entities
+  const encodeToEntities = useCallback((html: string) => {
+    return html
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;")
+  }, [])
+
+  // Handle element editing
+  const handleElementClick = useCallback((e: MouseEvent) => {
+    const target = e.target as HTMLElement
+    
+    // Find editable parent (p, h1-h6, li, span)
+    let editable = target
+    while (editable && !["P", "H1", "H2", "H3", "H4", "H5", "H6", "LI", "SPAN", "TD"].includes(editable.tagName)) {
+      editable = editable.parentElement as HTMLElement
+    }
+    
+    if (editable && editable.getAttribute("contenteditable") === "true") {
+      setEditingElement(editable)
+      setEditValue(editable.textContent || "")
+      setEditDialogOpen(true)
+      e.preventDefault()
+      e.stopPropagation()
+    }
+  }, [])
+
+  // Save edited content
+  const saveEdit = useCallback(() => {
+    if (editingElement && previewRef.current) {
+      editingElement.textContent = editValue
+      // Update entities code from DOM
+      const newHtml = previewRef.current.innerHTML
+      setEntitiesCode(encodeToEntities(newHtml))
+      setEditDialogOpen(false)
+      setEditingElement(null)
+    }
+  }, [editingElement, editValue, encodeToEntities])
+
+  // Set up hover highlights and contenteditable
+  useEffect(() => {
+    if (!previewRef.current) return
+
+    const preview = previewRef.current
+
+    // Make text elements editable
+    const editableElements = preview.querySelectorAll("p, h1, h2, h3, h4, h5, h6, li, td")
+    editableElements.forEach((el) => {
+      el.setAttribute("contenteditable", "true")
+      ;(el as HTMLElement).style.cursor = "text"
+    })
+
+    // Make images editable (src)
+    const images = preview.querySelectorAll("img")
+    images.forEach((img) => {
+      img.style.cursor = "pointer"
+      img.addEventListener("click", (e) => {
+        e.preventDefault()
+        const newSrc = prompt("Enter new image URL:", img.src)
+        if (newSrc) {
+          img.src = newSrc
+          setEntitiesCode(encodeToEntities(preview.innerHTML))
+        }
+      })
+    })
+
+    // Hover highlighting
+    const handleMouseOver = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (target.hasAttribute("contenteditable")) {
+        target.style.outline = "2px solid #1a73e8"
+        target.style.outlineOffset = "2px"
+        setHoveredElement(target)
+      }
+    }
+
+    const handleMouseOut = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (target.hasAttribute("contenteditable")) {
+        target.style.outline = ""
+        target.style.outlineOffset = ""
+        setHoveredElement(null)
+      }
+    }
+
+    preview.addEventListener("mouseover", handleMouseOver)
+    preview.addEventListener("mouseout", handleMouseOut)
+    preview.addEventListener("click", handleElementClick)
+
+    return () => {
+      preview.removeEventListener("mouseover", handleMouseOver)
+      preview.removeEventListener("mouseout", handleMouseOut)
+      preview.removeEventListener("click", handleElementClick)
+    }
+  }, [decodedHtml, encodeToEntities, handleElementClick])
 
   return (
     <div className="flex h-screen flex-col bg-background">
@@ -240,15 +352,42 @@ export default function LiveEditorPage() {
         <ResizablePanel defaultSize={50} minSize={30} id="live-preview" order={2}>
           <div className="h-full flex flex-col">
             <div className="flex items-center justify-between border-b px-4 py-3">
-              <h2 className="text-sm font-semibold tracking-tight">Live Preview (Inspectable)</h2>
+              <h2 className="text-sm font-semibold tracking-tight">
+                Live Preview (Click to edit text/images)
+              </h2>
             </div>
-            <div 
+            <div
+              ref={previewRef}
               className="h-full w-full overflow-auto bg-background"
               dangerouslySetInnerHTML={{ __html: decodedHtml }}
             />
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Content</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="edit-content">Content</Label>
+            <Textarea
+              id="edit-content"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              className="min-h-[100px] mt-2"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={saveEdit}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
