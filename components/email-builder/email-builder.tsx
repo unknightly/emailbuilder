@@ -210,8 +210,8 @@ export function EmailBuilder() {
 
       {/* Main content */}
       <div className="flex-1 overflow-hidden">
-        <ResizablePanelGroup direction="horizontal">
-          <ResizablePanel defaultSize={42} minSize={30} maxSize={60}>
+        <ResizablePanelGroup direction="horizontal" id="email-builder-panels">
+          <ResizablePanel defaultSize={42} minSize={30} maxSize={60} id="builder-panel">
             <BuilderPanel
               sections={sections}
               theme={theme}
@@ -223,7 +223,7 @@ export function EmailBuilder() {
             />
           </ResizablePanel>
           <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={58} minSize={30}>
+          <ResizablePanel defaultSize={58} minSize={30} id="preview-panel">
             <PreviewPanel html={html} />
           </ResizablePanel>
         </ResizablePanelGroup>
