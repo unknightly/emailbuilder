@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback } from "react"
 import { AppHeader } from "@/components/email-builder/app-header"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Copy, Check } from "lucide-react"
+import { Copy, Check, Trash2 } from "lucide-react"
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -181,10 +181,23 @@ export default function LiveEditorPage() {
     }
   }, [decodedHtml])
 
+  const clearCode = useCallback(() => {
+    setEntitiesCode("")
+  }, [])
+
   return (
     <div className="flex h-screen flex-col bg-background">
       <AppHeader currentPath="/live-editor">
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs gap-1.5"
+            onClick={clearCode}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Clear
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -228,13 +241,11 @@ export default function LiveEditorPage() {
         <ResizablePanel defaultSize={50} minSize={30} id="live-preview" order={2}>
           <div className="h-full flex flex-col">
             <div className="flex items-center justify-between border-b px-4 py-3">
-              <h2 className="text-sm font-semibold tracking-tight">Live Preview</h2>
+              <h2 className="text-sm font-semibold tracking-tight">Live Preview (Interactive)</h2>
             </div>
-            <iframe
-              srcDoc={decodedHtml}
-              title="Live Email Preview"
-              className="h-full w-full border-0 bg-background"
-              sandbox="allow-same-origin"
+            <div 
+              className="h-full w-full overflow-auto bg-background"
+              dangerouslySetInnerHTML={{ __html: decodedHtml }}
             />
           </div>
         </ResizablePanel>
