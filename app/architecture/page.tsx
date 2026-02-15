@@ -121,13 +121,20 @@ export default function ArchitecturePage() {
 
       <main className="px-8 py-10 max-w-6xl mx-auto">
 
-        {/* Layer 1: Entry Point */}
-        <SectionLabel>Entry Point</SectionLabel>
-        <div className="flex justify-center mb-2">
+        {/* Layer 1: Entry Points */}
+        <SectionLabel>Entry Points (Pages)</SectionLabel>
+        <div className="flex justify-center gap-6 mb-2">
           <Box
             title="app/page.tsx"
-            subtitle="Next.js route"
-            items={["Renders <EmailBuilder />"]}
+            subtitle="/ -- Template Builder"
+            items={["Renders <EmailBuilder />", "Dynamic import (SSR disabled)"]}
+            color="#0f172a"
+            width="w-64"
+          />
+          <Box
+            title="app/live-editor/page.tsx"
+            subtitle="/live-editor -- WYSIWYG Editor"
+            items={["Renders <LiveEditorPage />", "Dynamic import (SSR disabled)"]}
             color="#0f172a"
             width="w-64"
           />
@@ -426,6 +433,71 @@ export default function ArchitecturePage() {
           </div>
         </div>
 
+        {/* Live Editor Architecture */}
+        <div className="mt-10">
+          <SectionLabel>Live Editor (WYSIWYG Mode)</SectionLabel>
+          <div className="flex justify-center items-start gap-6">
+            <Box
+              title="Left Pane: Entities Editor"
+              subtitle="Editable textarea"
+              items={[
+                "Displays HTML entity-encoded source",
+                "Editable -- changes sync to preview",
+                "Clear button in section header",
+                "Copy HTML to clipboard",
+              ]}
+              color="#0ea5e9"
+              width="w-64"
+            />
+
+            <div className="flex flex-col items-center justify-center self-stretch py-4">
+              <div className="flex items-center gap-1">
+                <Arrow direction="right" />
+                <span className="text-[9px]" style={{ color: MUTED }}>postMessage sync</span>
+                <Arrow direction="left" />
+              </div>
+            </div>
+
+            <Box
+              title="Right Pane: Interactive Preview"
+              subtitle="iframe with injected scripts"
+              items={[
+                "Rendered HTML with hover highlights",
+                "Blue outline on hover + type badge",
+                "Pencil edit icon opens React modal",
+                "'+' zones between components",
+                "",
+                "Component type picker popup:",
+                "  Heading, Paragraph, Image, List",
+                "",
+                "Edit modal (via postMessage):",
+                "  Rich text toolbar (B/I/U/Variables)",
+                "  Heading level selector (H1-H4)",
+                "  List item add/remove rows",
+                "  Image URL, alt text, width",
+                "  Delete component button",
+              ]}
+              color="#0ea5e9"
+              width="w-72"
+            />
+          </div>
+          <div className="flex justify-center mt-4">
+            <Box
+              title="Communication Protocol"
+              subtitle="window.postMessage bidirectional"
+              items={[
+                "iframe -> parent: v0-live-editor-sync (HTML changes)",
+                "iframe -> parent: v0-open-modal (edit/add requests)",
+                "parent -> iframe: v0-apply-edit (modal save results)",
+                "parent -> iframe: v0-add-component (new component HTML)",
+                "Entity encode/decode: pure string replacement (SSR-safe)",
+              ]}
+              color="#64748b"
+              width="w-[480px]"
+            />
+          </div>
+        </div>
+
         {/* Key Features Summary */}
         <div className="mt-10">
           <SectionLabel>Key Characteristics</SectionLabel>
@@ -444,6 +516,8 @@ export default function ArchitecturePage() {
               ["Rich Text", "Markdown-style: **bold**, *italic*, __underline__, [link:id] placeholders"],
               ["Variables", "$FirstName, $LastName, $PolicyOwnerNumber, $ApplicationReference"],
               ["Theming", "11 color overrides applied at generation time via EmailTheme"],
+              ["Live Editor", "WYSIWYG editing via iframe + postMessage bridge, React modal for component editing"],
+              ["Pages", "Template Builder (/), Live Editor (/live-editor), Architecture (/architecture), Schema, Changelog"],
             ].map(([label, desc]) => (
               <div key={label} className="flex gap-3">
                 <span className="text-[11px] font-bold shrink-0 w-24 text-right" style={{ color: "#0f172a" }}>{label}</span>
