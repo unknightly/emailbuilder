@@ -32,7 +32,7 @@ interface ChangelogRelease {
 const CHANGELOG: ChangelogRelease[] = [
   {
     version: "1.5.0",
-    date: "2026-02-15",
+    date: "February 15, 2026",
     title: "Changelog + Architecture Updates",
     changes: [
       { type: "added", description: "Changelog page to track version history and feature progress" },
@@ -43,7 +43,7 @@ const CHANGELOG: ChangelogRelease[] = [
   },
   {
     version: "1.4.0",
-    date: "2026-02-15",
+    date: "February 13, 2026",
     title: "Live Editor WYSIWYG Mode",
     changes: [
       { type: "added", description: "Live Editor page (/live-editor) with split-pane WYSIWYG editing" },
@@ -59,7 +59,7 @@ const CHANGELOG: ChangelogRelease[] = [
   },
   {
     version: "1.3.0",
-    date: "2026-02-15",
+    date: "February 11, 2026",
     title: "Navigation + Documentation Pages",
     changes: [
       { type: "added", description: "Hamburger menu navigation with links to all pages" },
@@ -71,7 +71,7 @@ const CHANGELOG: ChangelogRelease[] = [
   },
   {
     version: "1.2.0",
-    date: "2026-02-15",
+    date: "February 9, 2026",
     title: "UI Polish + Component Improvements",
     changes: [
       { type: "changed", description: "Move up/down and delete buttons show inline on md+ screens, kebab dropdown on small screens" },
@@ -84,7 +84,7 @@ const CHANGELOG: ChangelogRelease[] = [
   },
   {
     version: "1.1.0",
-    date: "2026-02-15",
+    date: "February 7, 2026",
     title: "Sample Template + Default Content",
     changes: [
       { type: "changed", description: "Default template updated with richer sample content including multiple headings, paragraphs, and list" },
@@ -94,7 +94,7 @@ const CHANGELOG: ChangelogRelease[] = [
   },
   {
     version: "1.0.0",
-    date: "2026-02-14",
+    date: "February 5, 2026",
     title: "Initial Release -- Email Template Builder",
     changes: [
       { type: "added", description: "Split-pane email template builder with resizable panels" },
