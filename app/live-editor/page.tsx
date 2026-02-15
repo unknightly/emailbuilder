@@ -427,8 +427,8 @@ function buildInteractiveDoc(html: string): string {
       } else if (d.componentType === 'heading') {
         if (d.tag && d.tag !== el.tagName.toLowerCase()) {
           var newEl = document.createElement(d.tag);
-          var sizes = { h2: '22px', h3: '18px', h4: '16px' };
-          var lh = { h2: '28px', h3: '24px', h4: '22px' };
+          var sizes = { h1: '26px', h2: '22px', h3: '18px', h4: '16px' };
+          var lh = { h1: '32px', h2: '28px', h3: '24px', h4: '22px' };
           newEl.style.cssText = 'margin:0;padding:0 0 12px 0;font-size:' + (sizes[d.tag]||'18px') + ';line-height:' + (lh[d.tag]||'24px') + ';font-weight:bold;color:#333333;font-family:Helvetica, Arial, sans-serif;position:relative;';
           newEl.textContent = d.content;
           newEl.setAttribute('data-v0-idx', d.elIndex);
@@ -486,8 +486,8 @@ function buildInteractiveDoc(html: string): string {
       } else if (d2.componentType === 'heading') {
         var htag = d2.tag || 'h3';
         newComp = document.createElement(htag);
-        var hs = { h2: '22px', h3: '18px', h4: '16px' };
-        var hlh = { h2: '28px', h3: '24px', h4: '22px' };
+        var hs = { h1: '26px', h2: '22px', h3: '18px', h4: '16px' };
+        var hlh = { h1: '32px', h2: '28px', h3: '24px', h4: '22px' };
         newComp.style.cssText = 'margin:0;padding:0 0 12px 0;font-size:' + (hs[htag]||'18px') + ';line-height:' + (hlh[htag]||'24px') + ';font-weight:bold;color:#333333;font-family:Helvetica, Arial, sans-serif;';
         newComp.textContent = d2.content || 'New heading';
       } else if (d2.componentType === 'image') {
@@ -834,7 +834,7 @@ export default function LiveEditorPage() {
                 <div className="flex flex-col gap-1.5">
                   <Label className="text-xs font-medium">Level</Label>
                   <div className="flex gap-1.5">
-                    {(["h2", "h3", "h4"] as const).map((level) => (
+                    {(["h1", "h2", "h3", "h4"] as const).map((level) => (
                       <Button
                         key={level}
                         variant={modal.tag === level ? "default" : "outline"}
