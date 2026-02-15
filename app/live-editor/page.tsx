@@ -10,22 +10,6 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
 const DEFAULT_ENTITIES_CODE = `&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot; &quot;http://www.w3.org/TR/html4/loose.dtd&quot;&gt;
 &lt;html lang=&quot;en&quot;&gt;
@@ -168,23 +152,293 @@ img {
 &lt;/body&gt;
 &lt;/html&gt;`
 
+// Pure string-based entity decoder (no DOM needed, works on server + client)
+function decodeEntities(str: string): string {
+  return str
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x2F;/g, "/")
+}
+
+function encodeEntities(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+}
+
+// Inject interactive editing styles + scripts into the iframe
+function buildInteractiveDoc(html: string): string {
+  const editStyles = `
+<style>
+  [data-editable]:hover {
+    outline: 2px solid #1a73e8 !important;
+    outline-offset: 2px !important;
+    cursor: text !important;
+  }
+  [data-editable]:focus {
+    outline: 2px solid #1a73e8 !important;
+    outline-offset: 2px !important;
+    background: rgba(26,115,232,0.04) !important;
+  }
+  img[data-editable-img]:hover {
+    outline: 2px solid #1a73e8 !important;
+    outline-offset: 2px !important;
+    cursor: pointer !important;
+  }
+  .v0-add-zone {
+    position: relative;
+    height: 16px;
+    margin: 0;
+    padding: 0;
+  }
+  .v0-add-btn {
+    display: none;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    padding: 3px 10px;
+    font-size: 11px;
+    font-family: system-ui, sans-serif;
+    background: #1a73e8;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    z-index: 100;
+  }
+  .v0-add-zone:hover .v0-add-btn {
+    display: block;
+  }
+  .v0-add-zone:hover {
+    background: rgba(26,115,232,0.06);
+    border-radius: 4px;
+  }
+</style>`
+
+  const editScript = `
+<script>
+(function() {
+  // Make text elements editable
+  var selectors = 'p, h1, h2, h3, h4, h5, h6, li';
+  document.querySelectorAll(selectors).forEach(function(el) {
+    // Skip if inside a spacer/add zone
+    if (el.closest('.v0-add-zone')) return;
+    el.setAttribute('contenteditable', 'true');
+    el.setAttribute('data-editable', 'true');
+  });
+
+  // Mark images as editable
+  document.querySelectorAll('img').forEach(function(img) {
+    img.setAttribute('data-editable-img', 'true');
+    img.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var newSrc = prompt('Enter new image URL:', img.src);
+      if (newSrc && newSrc !== img.src) {
+        img.src = newSrc;
+        syncToParent();
+      }
+    });
+  });
+
+  // Insert add-zones between content elements inside body-text
+  var bodyText = document.querySelector('.body-text');
+  if (bodyText) {
+    var children = Array.from(bodyText.children).filter(function(c) {
+      return !c.classList.contains('v0-add-zone');
+    });
+    for (var i = 0; i < children.length; i++) {
+      var zone = document.createElement('div');
+      zone.className = 'v0-add-zone';
+      var btn = document.createElement('button');
+      btn.className = 'v0-add-btn';
+      btn.textContent = '+ Add Component';
+      btn.setAttribute('data-insert-after', String(i));
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var idx = parseInt(this.getAttribute('data-insert-after'));
+        handleAdd(idx);
+      });
+      zone.appendChild(btn);
+      children[i].after(zone);
+    }
+  }
+
+  // Also add a zone at the very top of body-text
+  if (bodyText && bodyText.firstElementChild && !bodyText.firstElementChild.classList.contains('v0-add-zone')) {
+    var topZone = document.createElement('div');
+    topZone.className = 'v0-add-zone';
+    var topBtn = document.createElement('button');
+    topBtn.className = 'v0-add-btn';
+    topBtn.textContent = '+ Add Component';
+    topBtn.setAttribute('data-insert-after', '-1');
+    topBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      handleAdd(-1);
+    });
+    topZone.appendChild(topBtn);
+    bodyText.insertBefore(topZone, bodyText.firstElementChild);
+  }
+
+  function handleAdd(afterIdx) {
+    var type = prompt('Component type: paragraph, heading, or image', 'paragraph');
+    if (!type) return;
+    type = type.trim().toLowerCase();
+
+    var newEl;
+    if (type === 'heading' || type === 'h3') {
+      var text = prompt('Heading text:', 'New heading');
+      if (!text) return;
+      newEl = document.createElement('h3');
+      newEl.style.cssText = 'margin:0;padding:0 0 12px 0;font-size:18px;line-height:24px;font-weight:bold;color:#333333;font-family:Helvetica, Arial, sans-serif;';
+      newEl.textContent = text;
+      newEl.setAttribute('contenteditable', 'true');
+      newEl.setAttribute('data-editable', 'true');
+    } else if (type === 'image' || type === 'img') {
+      var src = prompt('Image URL:', 'https://placehold.co/400x200');
+      if (!src) return;
+      newEl = document.createElement('img');
+      newEl.src = src;
+      newEl.alt = 'Image';
+      newEl.style.cssText = 'display:block;max-width:100%;height:auto;padding:0 0 12px 0;';
+      newEl.setAttribute('data-editable-img', 'true');
+      newEl.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var ns = prompt('Enter new image URL:', newEl.src);
+        if (ns && ns !== newEl.src) { newEl.src = ns; syncToParent(); }
+      });
+    } else {
+      var pText = prompt('Paragraph text:', 'New paragraph');
+      if (!pText) return;
+      newEl = document.createElement('p');
+      newEl.style.cssText = 'margin:0;padding:0 0 12px 0;font-size:14px;line-height:20px;color:#333333;font-family:Helvetica, Arial, sans-serif;';
+      newEl.textContent = pText;
+      newEl.setAttribute('contenteditable', 'true');
+      newEl.setAttribute('data-editable', 'true');
+    }
+
+    var bt = document.querySelector('.body-text');
+    if (!bt) return;
+
+    // Get content children (skip add zones)
+    var contentKids = Array.from(bt.children).filter(function(c) { return !c.classList.contains('v0-add-zone'); });
+
+    if (afterIdx < 0) {
+      bt.insertBefore(newEl, bt.firstElementChild);
+    } else if (afterIdx < contentKids.length) {
+      contentKids[afterIdx].after(newEl);
+    } else {
+      bt.appendChild(newEl);
+    }
+
+    // Add a new zone after the new element
+    var nz = document.createElement('div');
+    nz.className = 'v0-add-zone';
+    var nb = document.createElement('button');
+    nb.className = 'v0-add-btn';
+    nb.textContent = '+ Add Component';
+    nb.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      // Simple: just add after this new element
+      var allContent = Array.from(bt.children).filter(function(c) { return !c.classList.contains('v0-add-zone'); });
+      var myIdx = allContent.indexOf(newEl);
+      handleAdd(myIdx);
+    });
+    nz.appendChild(nb);
+    newEl.after(nz);
+
+    syncToParent();
+  }
+
+  // Sync edits back to parent
+  function syncToParent() {
+    // Remove add zones before serializing
+    var clone = document.documentElement.cloneNode(true);
+    clone.querySelectorAll('.v0-add-zone').forEach(function(z) { z.remove(); });
+    clone.querySelectorAll('[data-editable]').forEach(function(el) {
+      el.removeAttribute('contenteditable');
+      el.removeAttribute('data-editable');
+    });
+    clone.querySelectorAll('[data-editable-img]').forEach(function(el) {
+      el.removeAttribute('data-editable-img');
+    });
+    // Remove the injected style and script
+    clone.querySelectorAll('style').forEach(function(s) {
+      if (s.textContent.indexOf('v0-add-zone') !== -1) s.remove();
+    });
+    clone.querySelectorAll('script').forEach(function(s) { s.remove(); });
+
+    var cleanHtml = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">\\n' + clone.outerHTML;
+    window.parent.postMessage({ type: 'v0-live-editor-sync', html: cleanHtml }, '*');
+  }
+
+  // Sync on blur (text edit finished)
+  document.addEventListener('blur', function(e) {
+    if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-editable')) {
+      syncToParent();
+    }
+  }, true);
+
+  // Also sync on input for more responsiveness
+  document.addEventListener('input', function(e) {
+    if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-editable')) {
+      // Debounce
+      clearTimeout(window._v0SyncTimer);
+      window._v0SyncTimer = setTimeout(syncToParent, 500);
+    }
+  }, true);
+})();
+<\/script>`
+
+  // Inject styles before </head> and script before </body>
+  let result = html
+  if (result.includes("</head>")) {
+    result = result.replace("</head>", editStyles + "\n</head>")
+  } else {
+    result = editStyles + result
+  }
+  if (result.includes("</body>")) {
+    result = result.replace("</body>", editScript + "\n</body>")
+  } else {
+    result = result + editScript
+  }
+  return result
+}
+
 export default function LiveEditorPage() {
   const [entitiesCode, setEntitiesCode] = useState(DEFAULT_ENTITIES_CODE)
   const [copied, setCopied] = useState(false)
-  const [selectedElement, setSelectedElement] = useState<HTMLElement | null>(null)
-  const [hoveredElement, setHoveredElement] = useState<HTMLElement | null>(null)
-  const [showAddDialog, setShowAddDialog] = useState(false)
-  const [addType, setAddType] = useState<"paragraph" | "heading" | "image">("paragraph")
-  const [addContent, setAddContent] = useState("")
-  const [insertTarget, setInsertTarget] = useState<HTMLElement | null>(null)
-  const previewRef = useRef<HTMLDivElement>(null)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
 
-  // Decode HTML entities to actual HTML
-  const decodedHtml = useMemo(() => {
-    const textarea = document.createElement("textarea")
-    textarea.innerHTML = entitiesCode
-    return textarea.value
-  }, [entitiesCode])
+  // Decode entities using pure string replacement (SSR-safe)
+  const decodedHtml = useMemo(() => decodeEntities(entitiesCode), [entitiesCode])
+
+  // Build iframe doc with interactive editing injected
+  const iframeSrcDoc = useMemo(() => buildInteractiveDoc(decodedHtml), [decodedHtml])
+
+  // Listen for sync messages from iframe
+  useEffect(() => {
+    function handleMessage(e: MessageEvent) {
+      if (e.data?.type === "v0-live-editor-sync" && typeof e.data.html === "string") {
+        setEntitiesCode(encodeEntities(e.data.html))
+      }
+    }
+    window.addEventListener("message", handleMessage)
+    return () => window.removeEventListener("message", handleMessage)
+  }, [])
 
   const copyToClipboard = useCallback(async () => {
     try {
@@ -192,12 +446,12 @@ export default function LiveEditorPage() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      const textarea = document.createElement("textarea")
-      textarea.value = decodedHtml
-      document.body.appendChild(textarea)
-      textarea.select()
+      const ta = document.createElement("textarea")
+      ta.value = decodedHtml
+      document.body.appendChild(ta)
+      ta.select()
       document.execCommand("copy")
-      document.body.removeChild(textarea)
+      document.body.removeChild(ta)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     }
@@ -206,167 +460,6 @@ export default function LiveEditorPage() {
   const clearCode = useCallback(() => {
     setEntitiesCode("")
   }, [])
-
-  // Encode HTML back to entities
-  const encodeToEntities = useCallback((html: string) => {
-    return html
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;")
-  }, [])
-
-  // Update entities code from preview DOM
-  const updateFromDOM = useCallback(() => {
-    if (previewRef.current) {
-      setEntitiesCode(encodeToEntities(previewRef.current.innerHTML))
-    }
-  }, [encodeToEntities])
-
-  // Handle adding new component
-  const handleAddComponent = useCallback(() => {
-    if (!insertTarget || !previewRef.current) return
-
-    let newElement: HTMLElement
-    
-    if (addType === "paragraph") {
-      newElement = document.createElement("p")
-      newElement.style.cssText = "margin:0;padding:0 0 12px 0;font-size:14px;line-height:20px;color:#333333;font-family:Helvetica, Arial, sans-serif;"
-      newElement.textContent = addContent || "New paragraph"
-      newElement.setAttribute("contenteditable", "true")
-    } else if (addType === "heading") {
-      newElement = document.createElement("h3")
-      newElement.style.cssText = "margin:0;padding:0 0 12px 0;font-size:18px;line-height:24px;font-weight:bold;color:#333333;font-family:Helvetica, Arial, sans-serif;"
-      newElement.textContent = addContent || "New heading"
-      newElement.setAttribute("contenteditable", "true")
-    } else {
-      newElement = document.createElement("img")
-      ;(newElement as HTMLImageElement).src = addContent || "https://placehold.co/400x200"
-      newElement.style.cssText = "display:block;max-width:100%;height:auto;margin:0 0 12px 0;"
-      newElement.setAttribute("alt", "Image")
-    }
-
-    insertTarget.parentNode?.insertBefore(newElement, insertTarget.nextSibling)
-    updateFromDOM()
-    setShowAddDialog(false)
-    setAddContent("")
-  }, [insertTarget, addType, addContent, updateFromDOM])
-
-  // Set up interactivity
-  useEffect(() => {
-    if (!previewRef.current) return
-
-    const preview = previewRef.current
-
-    // Make text elements editable
-    const editableSelectors = ["p", "h1", "h2", "h3", "h4", "h5", "h6", "li", "td:not(:has(table))"]
-    editableSelectors.forEach((selector) => {
-      preview.querySelectorAll(selector).forEach((el) => {
-        const element = el as HTMLElement
-        element.setAttribute("contenteditable", "true")
-        element.style.cursor = "text"
-        element.style.position = "relative"
-      })
-    })
-
-    // Make images clickable to edit src
-    preview.querySelectorAll("img").forEach((img) => {
-      img.style.cursor = "pointer"
-      img.addEventListener("click", (e) => {
-        e.stopPropagation()
-        const newSrc = prompt("Enter new image URL:", img.src)
-        if (newSrc) {
-          img.src = newSrc
-          updateFromDOM()
-        }
-      })
-    })
-
-    // Handle blur to update entities code
-    const handleBlur = (e: FocusEvent) => {
-      const target = e.target as HTMLElement
-      if (target.hasAttribute("contenteditable")) {
-        updateFromDOM()
-      }
-    }
-
-    // Handle hover highlighting
-    const handleMouseOver = (e: MouseEvent) => {
-      const target = e.target as HTMLElement
-      if (target.hasAttribute("contenteditable") || target.tagName === "IMG") {
-        target.style.outline = "2px solid #1a73e8"
-        target.style.outlineOffset = "2px"
-        setHoveredElement(target)
-      }
-    }
-
-    const handleMouseOut = (e: MouseEvent) => {
-      const target = e.target as HTMLElement
-      if (target.hasAttribute("contenteditable") || target.tagName === "IMG") {
-        if (target !== selectedElement) {
-          target.style.outline = ""
-          target.style.outlineOffset = ""
-        }
-        setHoveredElement(null)
-      }
-    }
-
-    // Handle click to select and show add button
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement
-      if (target.hasAttribute("contenteditable")) {
-        e.stopPropagation()
-        setSelectedElement(target)
-        target.style.outline = "2px solid #1a73e8"
-        target.style.outlineOffset = "2px"
-      }
-    }
-
-    // Add spacing divs between components for adding
-    const bodyText = preview.querySelector(".body-text")
-    if (bodyText) {
-      const children = Array.from(bodyText.children)
-      children.forEach((child, idx) => {
-        if (["P", "H1", "H2", "H3", "H4", "H5", "H6", "TABLE", "IMG"].includes(child.tagName)) {
-          const spacer = document.createElement("div")
-          spacer.className = "component-spacer"
-          spacer.style.cssText = "height:8px;position:relative;margin:4px 0;"
-          spacer.setAttribute("data-spacer", "true")
-          
-          const addBtn = document.createElement("button")
-          addBtn.textContent = "+ Add Component"
-          addBtn.style.cssText = "position:absolute;left:50%;transform:translateX(-50%);top:50%;margin-top:-12px;padding:4px 8px;font-size:11px;background:#1a73e8;color:white;border:none;border-radius:4px;cursor:pointer;opacity:0;transition:opacity 0.2s;z-index:10;"
-          addBtn.addEventListener("click", () => {
-            setInsertTarget(child as HTMLElement)
-            setShowAddDialog(true)
-          })
-          
-          spacer.addEventListener("mouseenter", () => {
-            addBtn.style.opacity = "1"
-          })
-          spacer.addEventListener("mouseleave", () => {
-            addBtn.style.opacity = "0"
-          })
-          
-          spacer.appendChild(addBtn)
-          child.parentNode?.insertBefore(spacer, child.nextSibling)
-        }
-      })
-    }
-
-    preview.addEventListener("blur", handleBlur, true)
-    preview.addEventListener("mouseover", handleMouseOver)
-    preview.addEventListener("mouseout", handleMouseOut)
-    preview.addEventListener("click", handleClick)
-
-    return () => {
-      preview.removeEventListener("blur", handleBlur, true)
-      preview.removeEventListener("mouseover", handleMouseOver)
-      preview.removeEventListener("mouseout", handleMouseOut)
-      preview.removeEventListener("click", handleClick)
-    }
-  }, [decodedHtml, selectedElement, updateFromDOM])
 
   return (
     <div className="flex h-screen flex-col bg-background">
@@ -401,7 +494,7 @@ export default function LiveEditorPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 text-xs gap-1.5"
+                className="h-7 text-xs gap-1.5 text-muted-foreground"
                 onClick={clearCode}
               >
                 <Trash2 className="h-3 w-3" />
@@ -425,67 +518,22 @@ export default function LiveEditorPage() {
           <div className="h-full flex flex-col">
             <div className="flex items-center justify-between border-b px-4 py-3">
               <h2 className="text-sm font-semibold tracking-tight">
-                Live Preview (Click text/images to edit, hover gaps to add)
+                Live Preview
               </h2>
+              <span className="text-[11px] text-muted-foreground">
+                Click text to edit, hover between elements to add
+              </span>
             </div>
-            <div
-              ref={previewRef}
-              className="h-full w-full overflow-auto bg-background"
-              dangerouslySetInnerHTML={{ __html: decodedHtml }}
+            <iframe
+              ref={iframeRef}
+              srcDoc={iframeSrcDoc}
+              title="Live Email Preview"
+              className="h-full w-full border-0 bg-background"
+              sandbox="allow-same-origin allow-scripts allow-modals"
             />
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
-
-      {/* Add Component Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Component</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col gap-4 py-4">
-            <div>
-              <Label>Component Type</Label>
-              <Select value={addType} onValueChange={(v) => setAddType(v as any)}>
-                <SelectTrigger className="mt-2">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="paragraph">Paragraph</SelectItem>
-                  <SelectItem value="heading">Heading</SelectItem>
-                  <SelectItem value="image">Image</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>
-                {addType === "image" ? "Image URL" : "Content"}
-              </Label>
-              {addType === "image" ? (
-                <Input
-                  value={addContent}
-                  onChange={(e) => setAddContent(e.target.value)}
-                  placeholder="https://example.com/image.jpg"
-                  className="mt-2"
-                />
-              ) : (
-                <Textarea
-                  value={addContent}
-                  onChange={(e) => setAddContent(e.target.value)}
-                  placeholder={`Enter ${addType} content...`}
-                  className="min-h-[80px] mt-2"
-                />
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddComponent}>Add</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
