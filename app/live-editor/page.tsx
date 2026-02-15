@@ -74,8 +74,8 @@ export default function LiveEditorPage() {
         </div>
       </AppHeader>
 
-      <ResizablePanelGroup direction="horizontal" className="flex-1">
-        <ResizablePanel defaultSize={50} minSize={30}>
+      <ResizablePanelGroup direction="horizontal" className="flex-1" id="live-editor-panels">
+        <ResizablePanel defaultSize={50} minSize={30} id="entities-editor" order={1}>
           <div className="h-full flex flex-col">
             <div className="flex items-center justify-between border-b px-4 py-3">
               <h2 className="text-sm font-semibold tracking-tight">HTML Entities Code</h2>
@@ -93,7 +93,7 @@ export default function LiveEditorPage() {
 
         <ResizableHandle withHandle />
 
-        <ResizablePanel defaultSize={50} minSize={30}>
+        <ResizablePanel defaultSize={50} minSize={30} id="live-preview" order={2}>
           <div className="h-full flex flex-col">
             <div className="flex items-center justify-between border-b px-4 py-3">
               <h2 className="text-sm font-semibold tracking-tight">Live Preview</h2>
