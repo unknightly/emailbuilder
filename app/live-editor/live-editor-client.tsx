@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import { AppHeader } from "@/components/email-builder/app-header"
+import { RichTextInput } from "@/components/email-builder/rich-text-input"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -808,12 +809,12 @@ export default function LiveEditorPage() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-                <Textarea
-                  ref={textareaRef}
+                <RichTextInput
                   value={modal.content}
-                  onChange={(e) => setModal({ ...modal, content: e.target.value })}
+                  onChange={(newValue) => setModal({ ...modal, content: newValue })}
                   placeholder="Enter paragraph text... (use Enter for line breaks)"
-                  className="min-h-[100px] text-sm resize-y rounded-t-none border-t-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  multiline={true}
+                  className="rounded-t-none border-t-0"
                 />
               </div>
             )}
@@ -854,12 +855,12 @@ export default function LiveEditorPage() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  <Input
-                    ref={textareaRef as unknown as React.Ref<HTMLInputElement>}
+                  <RichTextInput
                     value={modal.content}
-                    onChange={(e) => setModal({ ...modal, content: e.target.value })}
+                    onChange={(newValue) => setModal({ ...modal, content: newValue })}
                     placeholder="Heading text..."
-                    className="h-9 text-sm rounded-t-none border-t-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    multiline={false}
+                    className="rounded-t-none border-t-0"
                   />
                 </div>
               </>
