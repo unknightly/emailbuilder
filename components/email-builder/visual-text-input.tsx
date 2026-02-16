@@ -52,10 +52,29 @@ export function VisualTextInput({ value, onChange, placeholder, multiline, class
 
   // Update editor content when value changes externally
   useEffect(() => {
-    if (editorRef.current && document.activeElement !== editorRef.current) {
+    if (editorRef.current) {
       const html = markdownToHtml(value)
-      if (editorRef.current.innerHTML !== html) {
+      // Only update if content is different and we're not currently editing
+      if (document.activeElement !== editorRef.current && editorRef.current.innerHTML !== html) {
+        const selection = window.getSelection()
+        const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null
+        const offset = range ? range.startOffset : 0
+        
         editorRef.current.innerHTML = html
+        
+        // Try to restore cursor position
+        if (range && editorRef.current.firstChild) {
+          try {
+            const newRange = document.createRange()
+            const textNode = editorRef.current.firstChild
+            newRange.setStart(textNode, Math.min(offset, (textNode.textContent || '').length))
+            newRange.collapse(true)
+            selection?.removeAllRanges()
+            selection?.addRange(newRange)
+          } catch (e) {
+            // Ignore cursor restoration errors
+          }
+        }
       }
     }
   }, [value, markdownToHtml])

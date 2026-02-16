@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { VisualTextInput } from "./visual-text-input"
 import {
   Select,
   SelectContent,
@@ -528,23 +529,14 @@ function RichTextField({
       )}
 
       {/* Text input - connects visually to toolbar */}
-      {multiline ? (
-        <Textarea
-          ref={inputRef}
+      <div className={`border ${showLinkCreator ? "" : "rounded-b-md"} border-t-0 px-3 py-2`}>
+        <VisualTextInput
           value={component.content}
-          onChange={(e) => onUpdate({ content: e.target.value })}
-          placeholder="Enter text... (use Enter for line breaks)"
-          className={`min-h-[80px] text-sm resize-y rounded-t-none border-t-0 focus-visible:ring-0 focus-visible:ring-offset-0 ${showLinkCreator ? "" : ""}`}
+          onChange={(newValue) => onUpdate({ content: newValue })}
+          placeholder={multiline ? "Enter text... (use Enter for line breaks)" : "Enter text..."}
+          multiline={multiline}
         />
-      ) : (
-        <Input
-          ref={inputRef}
-          value={component.content}
-          onChange={(e) => onUpdate({ content: e.target.value })}
-          placeholder="Enter text..."
-          className="h-8 text-sm rounded-t-none border-t-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-        />
-      )}
+      </div>
 
       {/* Existing links summary */}
       {links.length > 0 && (
