@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import { AppHeader } from "@/components/email-builder/app-header"
+import { VisualTextInput } from "@/components/email-builder/visual-text-input"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -808,13 +809,14 @@ export default function LiveEditorPage() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-                <Textarea
-                  ref={textareaRef}
-                  value={modal.content}
-                  onChange={(e) => setModal({ ...modal, content: e.target.value })}
-                  placeholder="Enter paragraph text... (use Enter for line breaks)"
-                  className="min-h-[100px] text-sm resize-y rounded-t-none border-t-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                />
+                <div className="border rounded-b-md border-t-0 px-3 py-2">
+                  <VisualTextInput
+                    value={modal.content}
+                    onChange={(newValue) => setModal({ ...modal, content: newValue })}
+                    placeholder="Enter paragraph text... (use Enter for line breaks)"
+                    multiline={true}
+                  />
+                </div>
               </div>
             )}
 
@@ -854,13 +856,14 @@ export default function LiveEditorPage() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  <Input
-                    ref={textareaRef as unknown as React.Ref<HTMLInputElement>}
-                    value={modal.content}
-                    onChange={(e) => setModal({ ...modal, content: e.target.value })}
-                    placeholder="Heading text..."
-                    className="h-9 text-sm rounded-t-none border-t-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                  />
+                  <div className="border rounded-b-md border-t-0 px-3 py-2">
+                    <VisualTextInput
+                      value={modal.content}
+                      onChange={(newValue) => setModal({ ...modal, content: newValue })}
+                      placeholder="Heading text..."
+                      multiline={false}
+                    />
+                  </div>
                 </div>
               </>
             )}
