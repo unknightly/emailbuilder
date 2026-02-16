@@ -656,53 +656,87 @@ export default function LiveEditorPage() {
   }, [modal, sendToIframe])
 
   // Text formatting helpers
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-
   const wrapSelection = useCallback(
     (prefix: string, suffix: string) => {
-      if (!modal || !textareaRef.current) return
-      const el = textareaRef.current
-      const start = el.selectionStart ?? 0
-      const end = el.selectionEnd ?? 0
-      const text = modal.content
-      const selected = text.slice(start, end)
-      const before = text.slice(Math.max(0, start - prefix.length), start)
-      const after = text.slice(end, end + suffix.length)
-      if (before === prefix && after === suffix) {
-        const newContent = text.slice(0, start - prefix.length) + selected + text.slice(end + suffix.length)
+      if (!modal) return
+      
+      // Get current selection from the window
+      const selection = window.getSelection()
+      if (!selection || selection.rangeCount === 0) {
+        // No selection - just add to end
+        const newContent = modal.content + prefix + suffix
         setModal({ ...modal, content: newContent })
-        requestAnimationFrame(() => {
-          el.selectionStart = start - prefix.length
-          el.selectionEnd = end - prefix.length
-          el.focus()
-        })
         return
       }
-      const wrapped = prefix + selected + suffix
-      const newContent = text.slice(0, start) + wrapped + text.slice(end)
-      setModal({ ...modal, content: newContent })
-      requestAnimationFrame(() => {
-        el.selectionStart = start + prefix.length
-        el.selectionEnd = selected.length > 0 ? end + prefix.length : start + prefix.length
-        el.focus()
-      })
+      
+      const selectedText = selection.toString()
+      if (!selectedText) {
+        // Empty selection - add at cursor
+        const newContent = modal.content + prefix + suffix
+        setModal({ ...modal, content: newContent })
+        return
+      }
+      
+      // Find where in the content the selected text is
+      const text = modal.content
+      const selectionStart = text.indexOf(selectedText)
+      
+      if (selectionStart === -1) {
+        // Selected text not found in content - append
+        const newContent = text + prefix + selectedText + suffix
+        setModal({ ...modal, content: newContent })
+        return
+      }
+      
+      const selectionEnd = selectionStart + selectedText.length
+      
+      // Check if already wrapped (toggle behavior)
+      const before = text.slice(Math.max(0, selectionStart - prefix.length), selectionStart)
+      const after = text.slice(selectionEnd, selectionEnd + suffix.length)
+      
+      if (before === prefix && after === suffix) {
+        // Remove wrapping
+        const newContent = text.slice(0, selectionStart - prefix.length) + selectedText + text.slice(selectionEnd + suffix.length)
+        setModal({ ...modal, content: newContent })
+      } else {
+        // Add wrapping
+        const wrapped = prefix + selectedText + suffix
+        const newContent = text.slice(0, selectionStart) + wrapped + text.slice(selectionEnd)
+        setModal({ ...modal, content: newContent })
+      }
     },
-    [modal],
+    [modal]
   )
 
   const insertVariable = useCallback(
     (v: string) => {
-      if (!modal || !textareaRef.current) return
-      const el = textareaRef.current
-      const pos = el.selectionStart ?? modal.content.length
-      const newContent = modal.content.slice(0, pos) + v + modal.content.slice(pos)
+      if (!modal) return
+      
+      // Get current selection
+      const selection = window.getSelection()
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0)
+        const selectedText = selection.toString()
+        
+        if (selectedText) {
+          // Replace selection with variable
+          const text = modal.content
+          const selectionStart = text.indexOf(selectedText)
+          
+          if (selectionStart !== -1) {
+            const selectionEnd = selectionStart + selectedText.length
+            const newContent = text.slice(0, selectionStart) + v + text.slice(selectionEnd)
+            setModal({ ...modal, content: newContent })
+            return
+          }
+        }
+      }
+      
+      // No selection - append to end
+      const newContent = modal.content + v
       setModal({ ...modal, content: newContent })
-      requestAnimationFrame(() => {
-        el.selectionStart = el.selectionEnd = pos + v.length
-        el.focus()
-      })
     },
-    [modal],
+    [modal]
   )
 
   const copyToClipboard = useCallback(async () => {
