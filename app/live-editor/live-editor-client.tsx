@@ -262,6 +262,25 @@ function buildInteractiveDoc(html: string): string {
     return 'Component';
   }
 
+  function processMarkdown(text) {
+    if (!text) return '';
+    var result = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    
+    // Process bold **text**
+    result = result.replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>');
+    // Process underline __text__
+    result = result.replace(/__(.+?)__/g, '<u>$1</u>');
+    // Process italic *text* (but not **) - use negative lookbehind/ahead
+    result = result.replace(/(?<!\\*)\\*(?!\\*)(.+?)(?<!\\*)\\*(?!\\*)/g, '<em>$1</em>');
+    // Line breaks
+    result = result.replace(/\\n/g, '<br>');
+    
+    return result;
+  }
+
   function indexEl(el) {
     var type = classify(el);
     if (!type) return;
@@ -422,7 +441,7 @@ function buildInteractiveDoc(html: string): string {
         // Preserve the edit btn and tag label
         var editBtn = el.querySelector('.v0-edit-btn');
         var tagLbl = el.querySelector('.v0-tag-label');
-        el.innerHTML = d.content.replace(/\\n/g, '<br>');
+        el.innerHTML = processMarkdown(d.content);
         if (tagLbl) el.appendChild(tagLbl);
         if (editBtn) el.appendChild(editBtn);
       } else if (d.componentType === 'heading') {
@@ -431,7 +450,7 @@ function buildInteractiveDoc(html: string): string {
           var sizes = { h1: '26px', h2: '22px', h3: '18px', h4: '16px' };
           var lh = { h1: '32px', h2: '28px', h3: '24px', h4: '22px' };
           newEl.style.cssText = 'margin:0;padding:0 0 12px 0;font-size:' + (sizes[d.tag]||'18px') + ';line-height:' + (lh[d.tag]||'24px') + ';font-weight:bold;color:#333333;font-family:Helvetica, Arial, sans-serif;position:relative;';
-          newEl.textContent = d.content;
+          newEl.innerHTML = processMarkdown(d.content);
           newEl.setAttribute('data-v0-idx', d.elIndex);
           newEl.setAttribute('data-v0-type', 'heading');
           var lbl2 = document.createElement('span');
@@ -446,11 +465,11 @@ function buildInteractiveDoc(html: string): string {
           newEl.addEventListener('click', function(ev) { if (!ev.target.closest('.v0-edit-btn')) { ev.preventDefault(); ev.stopPropagation(); openEditModal(newEl); } });
           el.replaceWith(newEl);
         } else {
-          var editBtn2 = el.querySelector('.v0-edit-btn');
-          var tagLbl2 = el.querySelector('.v0-tag-label');
-          el.textContent = d.content;
-          if (tagLbl2) el.appendChild(tagLbl2);
-          if (editBtn2) el.appendChild(editBtn2);
+          var eb = el.querySelector('.v0-edit-btn');
+          var tg = el.querySelector('.v0-tag-label');
+          el.innerHTML = processMarkdown(d.content);
+          if (tg) el.appendChild(tg);
+          if (eb) el.appendChild(eb);
         }
       } else if (d.componentType === 'image') {
         var img2 = el.tagName === 'IMG' ? el : el.querySelector('img');
@@ -480,17 +499,17 @@ function buildInteractiveDoc(html: string): string {
       var bodyText2 = document.querySelector('.body-text');
       if (!bodyText2) return;
       var newComp;
-      if (d2.componentType === 'paragraph') {
-        newComp = document.createElement('p');
-        newComp.style.cssText = 'margin:0;padding:0 0 12px 0;font-size:14px;line-height:20px;color:#333333;font-family:Helvetica, Arial, sans-serif;';
-        newComp.innerHTML = (d2.content || 'New paragraph...').replace(/\\n/g, '<br>');
+        if (d2.componentType === 'paragraph') {
+          newComp = document.createElement('p');
+          newComp.style.cssText = 'margin:0;padding:0 0 12px 0;font-size:14px;line-height:20px;color:#333333;font-family:Helvetica, Arial, sans-serif;';
+          newComp.innerHTML = processMarkdown(d2.content || 'New paragraph...');
       } else if (d2.componentType === 'heading') {
         var htag = d2.tag || 'h3';
         newComp = document.createElement(htag);
         var hs = { h1: '26px', h2: '22px', h3: '18px', h4: '16px' };
-        var hlh = { h1: '32px', h2: '28px', h3: '24px', h4: '22px' };
-        newComp.style.cssText = 'margin:0;padding:0 0 12px 0;font-size:' + (hs[htag]||'18px') + ';line-height:' + (hlh[htag]||'24px') + ';font-weight:bold;color:#333333;font-family:Helvetica, Arial, sans-serif;';
-        newComp.textContent = d2.content || 'New heading';
+          var hlh = { h1: '32px', h2: '28px', h3: '24px', h4: '22px' };
+          newComp.style.cssText = 'margin:0;padding:0 0 12px 0;font-size:' + (hs[htag]||'18px') + ';line-height:' + (hlh[htag]||'24px') + ';font-weight:bold;color:#333333;font-family:Helvetica, Arial, sans-serif;';
+          newComp.innerHTML = processMarkdown(d2.content || 'New heading');
       } else if (d2.componentType === 'image') {
         var tblI = document.createElement('table');
         tblI.setAttribute('border','0'); tblI.setAttribute('cellpadding','0'); tblI.setAttribute('cellspacing','0'); tblI.setAttribute('width','100%');
