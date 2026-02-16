@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { RichTextEditor } from "./rich-text-editor"
 import {
   Select,
   SelectContent,
@@ -528,16 +527,31 @@ function RichTextField({
         </div>
       )}
 
-      {/* Rich Text Editor - connects visually to toolbar */}
-      <RichTextEditor
-        value={component.content}
-        onChange={(newValue) => onUpdate({ content: newValue })}
-        links={links}
-        onLinksChange={(newLinks) => updateProps("links", newLinks)}
-        placeholder={multiline ? "Enter text... (use Enter for line breaks)" : "Enter text..."}
-        className="rounded-t-none border-t-0"
-        minHeight={multiline ? "80px" : "36px"}
-      />
+      {/* Text input - connects visually to toolbar */}
+      {multiline ? (
+        <Textarea
+          ref={inputRef}
+          value={component.content}
+          onChange={(e) => onUpdate({ content: e.target.value })}
+          placeholder="Enter text... (use Enter for line breaks)"
+          className={`min-h-[80px] text-sm resize-y rounded-t-none border-t-0 focus-visible:ring-0 focus-visible:ring-offset-0 ${showLinkCreator ? "" : ""}`}
+        />
+      ) : (
+        <Input
+          ref={inputRef}
+          value={component.content}
+          onChange={(e) => onUpdate({ content: e.target.value })}
+          placeholder="Enter text..."
+          className="h-8 text-sm rounded-t-none border-t-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+        />
+      )}
+
+      {/* Existing links summary */}
+      {links.length > 0 && (
+        <div className="mt-2">
+          <LinksList links={links} onRemove={removeLink} />
+        </div>
+      )}
     </div>
   )
 }

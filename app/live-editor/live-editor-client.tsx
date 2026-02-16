@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import { AppHeader } from "@/components/email-builder/app-header"
-import { RichTextEditor } from "@/components/email-builder/rich-text-editor"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -37,7 +36,7 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable"
-import { TEMPLATE_VARIABLES, type ParagraphLink } from "@/lib/email-types"
+import { TEMPLATE_VARIABLES } from "@/lib/email-types"
 
 const DEFAULT_ENTITIES_CODE = `&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot; &quot;http://www.w3.org/TR/html4/loose.dtd&quot;&gt;
 &lt;html lang=&quot;en&quot;&gt;
@@ -212,7 +211,6 @@ function encodeEntities(str: string): string {
     src?: string
     alt?: string
     width?: string
-    links?: ParagraphLink[]
     isNew?: boolean
     insertAfterIndex?: string
   }
@@ -601,7 +599,6 @@ export default function LiveEditorPage() {
           src: d.src || "",
           alt: d.alt || "",
           width: d.width || "",
-          links: d.links || [],
           isNew: d.isNew || false,
           insertAfterIndex: d.insertAfterIndex || "",
         })
@@ -784,14 +781,41 @@ export default function LiveEditorPage() {
           <div className="flex flex-col gap-3 pt-2 pb-1">
             {/* ── Paragraph ── */}
             {modal?.type === "paragraph" && (
-              <RichTextEditor
-                value={modal.content}
-                onChange={(newValue) => setModal({ ...modal, content: newValue })}
-                links={modal.links || []}
-                onLinksChange={(newLinks) => setModal({ ...modal, links: newLinks })}
-                placeholder="Enter paragraph text... (use Enter for line breaks)"
-                minHeight="100px"
-              />
+              <div className="flex flex-col gap-0">
+                <div className="flex items-center border rounded-t-md bg-muted/40 px-1.5 py-1 gap-px">
+                  <button type="button" title="Bold" onClick={() => wrapSelection("**", "**")} className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                    <Bold className="h-3.5 w-3.5" />
+                  </button>
+                  <button type="button" title="Italic" onClick={() => wrapSelection("*", "*")} className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                    <Italic className="h-3.5 w-3.5" />
+                  </button>
+                  <button type="button" title="Underline" onClick={() => wrapSelection("__", "__")} className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                    <Underline className="h-3.5 w-3.5" />
+                  </button>
+                  <div className="w-px h-4 bg-border mx-1" />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button type="button" title="Insert variable" className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                        <Braces className="h-3.5 w-3.5" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-48">
+                      {TEMPLATE_VARIABLES.map((v) => (
+                        <DropdownMenuItem key={v} onClick={() => insertVariable(v)} className="font-mono text-xs">
+                          {v}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <Textarea
+                  ref={textareaRef}
+                  value={modal.content}
+                  onChange={(e) => setModal({ ...modal, content: e.target.value })}
+                  placeholder="Enter paragraph text... (use Enter for line breaks)"
+                  className="min-h-[100px] text-sm resize-y rounded-t-none border-t-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+              </div>
             )}
 
             {/* ── Heading ── */}
@@ -813,14 +837,31 @@ export default function LiveEditorPage() {
                     ))}
                   </div>
                 </div>
-                <RichTextEditor
-                  value={modal.content}
-                  onChange={(newValue) => setModal({ ...modal, content: newValue })}
-                  links={modal.links || []}
-                  onLinksChange={(newLinks) => setModal({ ...modal, links: newLinks })}
-                  placeholder="Heading text..."
-                  minHeight="36px"
-                />
+                <div className="flex flex-col gap-0">
+                  <div className="flex items-center border rounded-t-md bg-muted/40 px-1.5 py-1 gap-px">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button type="button" title="Insert variable" className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                          <Braces className="h-3.5 w-3.5" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-48">
+                        {TEMPLATE_VARIABLES.map((v) => (
+                          <DropdownMenuItem key={v} onClick={() => insertVariable(v)} className="font-mono text-xs">
+                            {v}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  <Input
+                    ref={textareaRef as unknown as React.Ref<HTMLInputElement>}
+                    value={modal.content}
+                    onChange={(e) => setModal({ ...modal, content: e.target.value })}
+                    placeholder="Heading text..."
+                    className="h-9 text-sm rounded-t-none border-t-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                </div>
               </>
             )}
 
