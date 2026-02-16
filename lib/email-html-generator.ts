@@ -90,10 +90,11 @@ function renderList(component: EmailComponent, section: EmailSection, theme: Ema
   const color = section.type === "footer" ? theme.footerTextColor : theme.bodyTextColor
   const fontSize = section.type === "footer" ? "12px" : "14px"
   const lineHeight = section.type === "footer" ? "16px" : "20px"
+  const links = (component.props.links as ParagraphLink[]) || []
   const listItems = items
     .map(
       (item) =>
-        `<li style="padding:2px 0;font-size:${fontSize};line-height:${lineHeight};color:${color};font-family:Helvetica, Arial, sans-serif;">${escapeHtml(item)}</li>`
+        `<li style="padding:2px 0;font-size:${fontSize};line-height:${lineHeight};color:${color};font-family:Helvetica, Arial, sans-serif;">${processRichContent(item, links, theme)}</li>`
     )
     .join("\n        ")
   return `<table border="0" cellpadding="0" cellspacing="0" width="100%" style="padding:0 0 12px 0;">
@@ -111,7 +112,8 @@ function renderIndent(component: EmailComponent, section: EmailSection, theme: E
   const color = section.type === "footer" ? theme.footerTextColor : theme.bodyTextColor
   const fontSize = section.type === "footer" ? "12px" : "14px"
   const lineHeight = section.type === "footer" ? "16px" : "20px"
-  const content = escapeHtml(component.content).replace(/\n/g, "<br>")
+  const links = (component.props.links as ParagraphLink[]) || []
+  const content = processRichContent(component.content, links, theme)
   return `<table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 12px 0;">
   <tr>
     <td style="background-color:${theme.indentBackground};border-radius:4px;padding:16px 20px;font-size:${fontSize};line-height:${lineHeight};color:${color};font-family:Helvetica, Arial, sans-serif;">
