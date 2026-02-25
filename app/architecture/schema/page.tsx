@@ -201,14 +201,15 @@ export default function SchemaPage() {
             <SchemaField name="props.width" type="number" description="Display width in pixels. The image is rendered responsively with max-width." defaultValue="600" />
           </SchemaCard>
 
-          <SchemaCard title="list" description="Renders an unordered <ul> list with bullet points." color="#8b5cf6">
+          <SchemaCard title="list" description="Renders an unordered <ul> list with bullet points. Each item supports rich text formatting." color="#8b5cf6">
             <SchemaField name="content" type="string" description="Unused (empty string). List items are stored in props." defaultValue='""' />
-            <SchemaField name="props.items" type="array" description='Array of strings, each rendered as a <li> element. e.g. ["Item 1", "Item 2", "Item 3"]' />
+            <SchemaField name="props.items" type="array" description='Array of strings, each rendered as a <li> element. Supports **bold**, *italic*, __underline__ syntax. e.g. ["Step one", "**Important** step two"]' />
+            <SchemaField name="props.links" type="array" required={false} description="Array of ParagraphLink objects for inline hyperlinks within list items. Referenced via [link:id] in item strings." />
           </SchemaCard>
 
-          <SchemaCard title="indent" description="Renders a visually indented block with a themed background color. Used for callouts, quotes, or highlighted content." color="#8b5cf6">
-            <SchemaField name="content" type="string" description="The indented text content. Supports \n line breaks (converted to <br>)." />
-            <SchemaField name="props" type="object" description="No additional props. Background color is controlled by the theme's indentBackground property." />
+          <SchemaCard title="indent" description="Renders a visually indented block with a themed background color. Used for callouts, quotes, or highlighted content. Supports rich text." color="#8b5cf6">
+            <SchemaField name="content" type="string" description="The indented text content. Supports **bold**, *italic*, __underline__, [link:id] references, and \n line breaks." />
+            <SchemaField name="props.links" type="array" required={false} description="Array of ParagraphLink objects for inline hyperlinks within the indent block." />
           </SchemaCard>
 
           <SchemaCard title="html" description="Renders raw HTML directly into the email. No escaping or processing is applied." color="#8b5cf6">
@@ -270,7 +271,7 @@ export default function SchemaPage() {
         <div className="rounded-lg border shadow-sm overflow-hidden" style={{ borderColor: BORDER, backgroundColor: BG_CARD }}>
           <div className="px-5 py-4" style={{ backgroundColor: "#0f172a" }}>
             <h2 className="text-sm font-bold text-white">Inline Formatting</h2>
-            <p className="text-[11px] text-white/70 mt-0.5">Applied during HTML generation via regex processing in processRichContent(). Supported in heading and paragraph content strings.</p>
+            <p className="text-[11px] text-white/70 mt-0.5">Applied during HTML generation via processRichContent(). Supported in heading, paragraph, list item, and indent content strings. Rendered visually in the editor via VisualTextInput (contentEditable).</p>
           </div>
           <div className="px-5 py-4">
             <table className="w-full text-xs">

@@ -121,6 +121,27 @@ export default function ArchitecturePage() {
 
       <main className="px-8 py-10 max-w-6xl mx-auto">
 
+        {/* Auth Gate */}
+        <SectionLabel>Auth Gate</SectionLabel>
+        <div className="flex justify-center mb-2">
+          <Box
+            title="AuthGate"
+            subtitle="components/auth-gate.tsx -- wraps entire app"
+            items={[
+              "Mounted in app/layout.tsx around {children}",
+              "Checks sessionStorage for 'agile2026-auth' key",
+              "Shows password screen until correct password entered",
+              "Password: AGILE2026 (hardcoded, client-side only)",
+              "Session persists until browser tab is closed",
+            ]}
+            color="#dc2626"
+            width="w-[420px]"
+          />
+        </div>
+        <div className="flex justify-center">
+          <Arrow label="wraps" />
+        </div>
+
         {/* Layer 1: Entry Points */}
         <SectionLabel>Entry Points (Pages)</SectionLabel>
         <div className="flex justify-center gap-6 mb-2">
@@ -231,10 +252,15 @@ export default function ArchitecturePage() {
                       "  Link insert (web/email/tel)",
                       "  Variable insert dropdown",
                       "",
+                      "VisualTextInput (contentEditable):",
+                      "  Renders formatting visually in editor",
+                      "  Stores as markdown in state",
+                      "  Syncs only on external value change",
+                      "",
                       "Kebab menu (sm) / inline btns (md+)",
                     ]}
                     color="#f59e0b"
-                    width="w-60"
+                    width="w-64"
                   />
                   <Box
                     title="AddComponentMenu"
@@ -438,13 +464,13 @@ export default function ArchitecturePage() {
           <SectionLabel>Live Editor (WYSIWYG Mode)</SectionLabel>
           <div className="flex justify-center items-start gap-6">
             <Box
-              title="Left Pane: Entities Editor"
-              subtitle="Editable textarea"
+              title="Left Pane: Entities Source"
+              subtitle="Editable textarea (HTML entities)"
               items={[
                 "Displays HTML entity-encoded source",
                 "Editable -- changes sync to preview",
                 "Clear button in section header",
-                "Copy HTML to clipboard",
+                "Copy HTML button (entities)",
               ]}
               color="#0ea5e9"
               width="w-64"
@@ -467,14 +493,23 @@ export default function ArchitecturePage() {
                 "Pencil edit icon opens React modal",
                 "'+' zones between components",
                 "",
+                "processMarkdown() on every update:",
+                "  **bold** -> <strong>",
+                "  *italic* -> <em>",
+                "  __underline__ -> <u>",
+                "  [link:id] -> <a href='...'> (from links[])",
+                "  \\n -> <br>",
+                "",
                 "Component type picker popup:",
                 "  Heading, Paragraph, Image, List",
                 "",
-                "Edit modal (via postMessage):",
-                "  Rich text toolbar (B/I/U/Variables)",
+                "Edit modal (React, in parent):",
+                "  VisualTextInput (WYSIWYG formatting)",
+                "  Link insert (web/email/tel) + LinksList",
                 "  Heading level selector (H1-H4)",
                 "  List item add/remove rows",
                 "  Image URL, alt text, width",
+                "  Variable insert dropdown",
                 "  Delete component button",
               ]}
               color="#0ea5e9"
@@ -486,14 +521,15 @@ export default function ArchitecturePage() {
               title="Communication Protocol"
               subtitle="window.postMessage bidirectional"
               items={[
-                "iframe -> parent: v0-live-editor-sync (HTML changes)",
-                "iframe -> parent: v0-open-modal (edit/add requests)",
-                "parent -> iframe: v0-apply-edit (modal save results)",
-                "parent -> iframe: v0-add-component (new component HTML)",
+                "iframe -> parent: v0-live-editor-sync (HTML source changes)",
+                "iframe -> parent: v0-open-modal (edit/add component requests)",
+                "parent -> iframe: v0-update-component (modal save -- update existing)",
+                "parent -> iframe: v0-add-component (modal save -- insert new)",
                 "Entity encode/decode: pure string replacement (SSR-safe)",
+                "Links passed as JSON array alongside content string",
               ]}
               color="#64748b"
-              width="w-[480px]"
+              width="w-[520px]"
             />
           </div>
         </div>
@@ -513,11 +549,12 @@ export default function ArchitecturePage() {
               ["Compatibility", "Outlook, Gmail, Apple Mail, Yahoo -- full email-client CSS resets"],
               ["State", "React useState -- ephemeral, no persistence layer"],
               ["Persistence", "JSON file download/upload (user-managed)"],
-              ["Rich Text", "Markdown-style: **bold**, *italic*, __underline__, [link:id] placeholders"],
+              ["Auth", "sessionStorage password gate (AGILE2026) in AuthGate wrapping layout.tsx"],
+              ["Rich Text", "Stored as markdown syntax; rendered visually via VisualTextInput (contentEditable) in editors and via processRichContent() in HTML output"],
               ["Variables", "$FirstName, $LastName, $PolicyOwnerNumber, $ApplicationReference"],
               ["Theming", "11 color overrides applied at generation time via EmailTheme"],
-              ["Live Editor", "WYSIWYG editing via iframe + postMessage bridge, React modal for component editing"],
-              ["Pages", "Template Builder (/), Live Editor (/live-editor), Architecture (/architecture), Schema, Changelog"],
+              ["Live Editor", "WYSIWYG iframe + postMessage bridge; processMarkdown() renders formatting in preview; VisualTextInput in React modals"],
+              ["Pages", "/ (Builder), /live-editor, /architecture, /architecture/schema, /changelog"],
             ].map(([label, desc]) => (
               <div key={label} className="flex gap-3">
                 <span className="text-[11px] font-bold shrink-0 w-24 text-right" style={{ color: "#0f172a" }}>{label}</span>
