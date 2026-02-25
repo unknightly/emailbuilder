@@ -31,13 +31,16 @@ import {
   Braces,
   Plus,
   X,
+  Globe,
+  Mail,
+  Phone,
 } from "lucide-react"
 import {
   ResizablePanelGroup,
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable"
-import { TEMPLATE_VARIABLES } from "@/lib/email-types"
+import { TEMPLATE_VARIABLES, createId, type ParagraphLink, type LinkType } from "@/lib/email-types"
 
 const DEFAULT_ENTITIES_CODE = `&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot; &quot;http://www.w3.org/TR/html4/loose.dtd&quot;&gt;
 &lt;html lang=&quot;en&quot;&gt;
@@ -212,6 +215,7 @@ function encodeEntities(str: string): string {
     src?: string
     alt?: string
     width?: string
+    links?: ParagraphLink[]
     isNew?: boolean
     insertAfterIndex?: string
   }
@@ -262,18 +266,31 @@ function buildInteractiveDoc(html: string): string {
     return 'Component';
   }
 
-  function processMarkdown(text) {
+  function processMarkdown(text, links) {
     if (!text) return '';
     var result = text
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
     
+    // Replace link placeholders [link:id] with anchor tags
+    if (links && links.length) {
+      links.forEach(function(link) {
+        var placeholder = '[link:' + link.id + ']';
+        var escaped = placeholder.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        var href = link.linkType === 'email' ? 'mailto:' + link.url
+                 : link.linkType === 'telephone' ? 'tel:' + link.url.replace(/\\s/g, '')
+                 : (link.url.startsWith('http') ? link.url : 'https://' + link.url);
+        var anchor = '<a href="' + href + '" style="color:#1a73e8;text-decoration:underline;">' + link.text + '</a>';
+        result = result.split(escaped).join(anchor);
+      });
+    }
+    
     // Process bold **text**
     result = result.replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>');
     // Process underline __text__
     result = result.replace(/__(.+?)__/g, '<u>$1</u>');
-    // Process italic *text* (but not **) - use negative lookbehind/ahead
+    // Process italic *text* (but not **)
     result = result.replace(/(?<!\\*)\\*(?!\\*)(.+?)(?<!\\*)\\*(?!\\*)/g, '<em>$1</em>');
     // Line breaks
     result = result.replace(/\\n/g, '<br>');
@@ -441,7 +458,7 @@ function buildInteractiveDoc(html: string): string {
         // Preserve the edit btn and tag label
         var editBtn = el.querySelector('.v0-edit-btn');
         var tagLbl = el.querySelector('.v0-tag-label');
-        el.innerHTML = processMarkdown(d.content);
+        el.innerHTML = processMarkdown(d.content, d.links || []);
         if (tagLbl) el.appendChild(tagLbl);
         if (editBtn) el.appendChild(editBtn);
       } else if (d.componentType === 'heading') {
@@ -450,7 +467,7 @@ function buildInteractiveDoc(html: string): string {
           var sizes = { h1: '26px', h2: '22px', h3: '18px', h4: '16px' };
           var lh = { h1: '32px', h2: '28px', h3: '24px', h4: '22px' };
           newEl.style.cssText = 'margin:0;padding:0 0 12px 0;font-size:' + (sizes[d.tag]||'18px') + ';line-height:' + (lh[d.tag]||'24px') + ';font-weight:bold;color:#333333;font-family:Helvetica, Arial, sans-serif;position:relative;';
-          newEl.innerHTML = processMarkdown(d.content);
+          newEl.innerHTML = processMarkdown(d.content, d.links || []);
           newEl.setAttribute('data-v0-idx', d.elIndex);
           newEl.setAttribute('data-v0-type', 'heading');
           var lbl2 = document.createElement('span');
@@ -467,7 +484,7 @@ function buildInteractiveDoc(html: string): string {
         } else {
           var eb = el.querySelector('.v0-edit-btn');
           var tg = el.querySelector('.v0-tag-label');
-          el.innerHTML = processMarkdown(d.content);
+          el.innerHTML = processMarkdown(d.content, d.links || []);
           if (tg) el.appendChild(tg);
           if (eb) el.appendChild(eb);
         }
@@ -502,14 +519,14 @@ function buildInteractiveDoc(html: string): string {
         if (d2.componentType === 'paragraph') {
           newComp = document.createElement('p');
           newComp.style.cssText = 'margin:0;padding:0 0 12px 0;font-size:14px;line-height:20px;color:#333333;font-family:Helvetica, Arial, sans-serif;';
-          newComp.innerHTML = processMarkdown(d2.content || 'New paragraph...');
+          newComp.innerHTML = processMarkdown(d2.content || 'New paragraph...', d2.links || []);
       } else if (d2.componentType === 'heading') {
         var htag = d2.tag || 'h3';
         newComp = document.createElement(htag);
         var hs = { h1: '26px', h2: '22px', h3: '18px', h4: '16px' };
           var hlh = { h1: '32px', h2: '28px', h3: '24px', h4: '22px' };
           newComp.style.cssText = 'margin:0;padding:0 0 12px 0;font-size:' + (hs[htag]||'18px') + ';line-height:' + (hlh[htag]||'24px') + ';font-weight:bold;color:#333333;font-family:Helvetica, Arial, sans-serif;';
-          newComp.innerHTML = processMarkdown(d2.content || 'New heading');
+          newComp.innerHTML = processMarkdown(d2.content || 'New heading', d2.links || []);
       } else if (d2.componentType === 'image') {
         var tblI = document.createElement('table');
         tblI.setAttribute('border','0'); tblI.setAttribute('cellpadding','0'); tblI.setAttribute('cellspacing','0'); tblI.setAttribute('width','100%');
@@ -590,6 +607,97 @@ function buildInteractiveDoc(html: string): string {
 }
 
 // ── React component ──
+/* ─── Link type config ─── */
+const linkTypeConfig: Record<LinkType, { icon: React.ReactNode; label: string; placeholder: string; urlLabel: string }> = {
+  web: { icon: <Globe className="h-3.5 w-3.5" />, label: "Web", placeholder: "https://example.com", urlLabel: "URL" },
+  email: { icon: <Mail className="h-3.5 w-3.5" />, label: "Email", placeholder: "hello@example.com", urlLabel: "Email" },
+  telephone: { icon: <Phone className="h-3.5 w-3.5" />, label: "Phone", placeholder: "+61 400 000 000", urlLabel: "Phone" },
+}
+
+/* ─── Inline Link Creator ─── */
+function InlineLinkCreator({ onAdd, onCancel }: { onAdd: (link: ParagraphLink) => void; onCancel: () => void }) {
+  const [linkType, setLinkType] = useState<LinkType>("web")
+  const [text, setText] = useState("")
+  const [url, setUrl] = useState("")
+  const cfg = linkTypeConfig[linkType]
+  return (
+    <div className="border border-t-0 rounded-b-md bg-muted/30 p-3 flex flex-col gap-2">
+      <div className="flex items-center gap-1">
+        {(["web", "email", "telephone"] as LinkType[]).map((type) => {
+          const c = linkTypeConfig[type]
+          return (
+            <button
+              key={type}
+              type="button"
+              onClick={() => setLinkType(type)}
+              className={`inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs transition-colors ${
+                linkType === type
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-background border text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {c.icon} {c.label}
+            </button>
+          )
+        })}
+      </div>
+      <Input
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Link text"
+        className="h-8 text-sm"
+      />
+      <Input
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        placeholder={cfg.placeholder}
+        className="h-8 text-sm font-mono"
+      />
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          className="h-7 text-xs"
+          disabled={!text.trim() || !url.trim()}
+          onClick={() => onAdd({ id: createId(), text: text.trim(), url: url.trim(), linkType })}
+        >
+          Insert Link
+        </Button>
+        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Links summary list ─── */
+function LinksList({ links, onRemove }: { links: ParagraphLink[]; onRemove: (id: string) => void }) {
+  if (links.length === 0) return null
+  return (
+    <div className="mt-2 flex flex-col gap-1">
+      {links.map((link) => {
+        const cfg = linkTypeConfig[link.linkType]
+        return (
+          <div key={link.id} className="flex items-center gap-2 rounded-md bg-muted/40 px-2 py-1 text-xs">
+            <span className="text-muted-foreground">{cfg.icon}</span>
+            <span className="font-medium truncate max-w-[100px]">{link.text}</span>
+            <span className="text-muted-foreground font-mono truncate flex-1">{link.url}</span>
+            <button
+              type="button"
+              onClick={() => onRemove(link.id)}
+              className="ml-auto text-muted-foreground hover:text-destructive transition-colors shrink-0"
+            >
+              <X className="h-3 w-3" />
+              <span className="sr-only">Remove link</span>
+            </button>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+/* ─── Main page ─── */
 export default function LiveEditorPage() {
   const [entitiesCode, setEntitiesCode] = useState(DEFAULT_ENTITIES_CODE)
   const [copied, setCopied] = useState(false)
@@ -597,6 +705,7 @@ export default function LiveEditorPage() {
 
   // Modal state
   const [modal, setModal] = useState<ModalState | null>(null)
+  const [showLinkCreator, setShowLinkCreator] = useState(false)
 
   const decodedHtml = useMemo(() => decodeEntities(entitiesCode), [entitiesCode])
   const iframeSrcDoc = useMemo(() => buildInteractiveDoc(decodedHtml), [decodedHtml])
@@ -619,6 +728,7 @@ export default function LiveEditorPage() {
           src: d.src || "",
           alt: d.alt || "",
           width: d.width || "",
+          links: d.links || [],
           isNew: d.isNew || false,
           insertAfterIndex: d.insertAfterIndex || "",
         })
@@ -649,6 +759,7 @@ export default function LiveEditorPage() {
           src: modal.src,
           alt: modal.alt,
           width: modal.width,
+          links: modal.links || [],
         },
       })
     } else {
@@ -662,6 +773,7 @@ export default function LiveEditorPage() {
           src: modal.src,
           alt: modal.alt,
           width: modal.width,
+          links: modal.links || [],
         },
       })
     }
@@ -824,7 +936,7 @@ export default function LiveEditorPage() {
       </ResizablePanelGroup>
 
       {/* ── Component Editor Modal ── */}
-      <Dialog open={modal !== null} onOpenChange={(open) => !open && setModal(null)}>
+      <Dialog open={modal !== null} onOpenChange={(open) => { if (!open) { setModal(null); setShowLinkCreator(false) } }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-base capitalize">
@@ -847,6 +959,19 @@ export default function LiveEditorPage() {
                     <Underline className="h-3.5 w-3.5" />
                   </button>
                   <div className="w-px h-4 bg-border mx-1" />
+                  <button
+                    type="button"
+                    title="Insert link"
+                    onClick={() => setShowLinkCreator(!showLinkCreator)}
+                    className={`inline-flex items-center justify-center rounded h-7 w-7 transition-colors ${
+                      showLinkCreator
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                    }`}
+                  >
+                    <Link2 className="h-3.5 w-3.5" />
+                  </button>
+                  <div className="w-px h-4 bg-border mx-1" />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button type="button" title="Insert variable" className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
@@ -862,14 +987,35 @@ export default function LiveEditorPage() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-                <div className="border rounded-b-md border-t-0 px-3 py-2">
-                  <VisualTextInput
-                    value={modal.content}
-                    onChange={(newValue) => setModal({ ...modal, content: newValue })}
-                    placeholder="Enter paragraph text... (use Enter for line breaks)"
-                    multiline={true}
+                {showLinkCreator ? (
+                  <InlineLinkCreator
+                    onAdd={(link) => {
+                      const newLinks = [...(modal.links || []), link]
+                      const newContent = modal.content + `[link:${link.id}]`
+                      setModal({ ...modal, content: newContent, links: newLinks })
+                      setShowLinkCreator(false)
+                    }}
+                    onCancel={() => setShowLinkCreator(false)}
                   />
-                </div>
+                ) : (
+                  <div className="border rounded-b-md border-t-0 px-3 py-2">
+                    <VisualTextInput
+                      value={modal.content}
+                      onChange={(newValue) => setModal({ ...modal, content: newValue })}
+                      placeholder="Enter paragraph text... (use Enter for line breaks)"
+                      multiline={true}
+                      links={modal.links || []}
+                    />
+                  </div>
+                )}
+                <LinksList
+                  links={modal.links || []}
+                  onRemove={(id) => {
+                    const newLinks = (modal.links || []).filter((l) => l.id !== id)
+                    const newContent = modal.content.replace(`[link:${id}]`, "")
+                    setModal({ ...modal, links: newLinks, content: newContent })
+                  }}
+                />
               </div>
             )}
 

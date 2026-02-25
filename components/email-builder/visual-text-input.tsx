@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useEffect, useCallback } from "react"
+import type { ParagraphLink } from "@/lib/email-types"
 
 interface VisualTextInputProps {
   value: string
@@ -8,30 +9,37 @@ interface VisualTextInputProps {
   placeholder?: string
   multiline?: boolean
   className?: string
+  links?: ParagraphLink[]
 }
 
-export function VisualTextInput({ value, onChange, placeholder, multiline, className }: VisualTextInputProps) {
+export function VisualTextInput({ value, onChange, placeholder, multiline, className, links = [] }: VisualTextInputProps) {
   const editorRef = useRef<HTMLDivElement>(null)
 
   // Convert markdown to HTML for display
   const markdownToHtml = useCallback((markdown: string) => {
     let html = markdown
+    // Render link placeholders as styled link text
+    for (const link of links) {
+      const placeholder = `[link:${link.id}]`
+      // Use a data attribute so we can round-trip back to the placeholder
+      html = html.split(placeholder).join(
+        `<a data-link-id="${link.id}" class="text-blue-600 underline cursor-pointer" contenteditable="false">${link.text}</a>`
+      )
+    }
     // Bold **text**
     html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    // Italic *text*
-    html = html.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
     // Underline __text__
     html = html.replace(/__(.+?)__/g, '<u>$1</u>')
-    // Links [link:id]
-    html = html.replace(/\[link:([^\]]+)\]/g, '<span class="text-blue-600 underline">[link:$1]</span>')
+    // Italic *text* (not **)
+    html = html.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
     // Variables $VarName
-    html = html.replace(/\$([A-Z][a-zA-Z0-9]*)/g, '<span class="font-mono text-purple-600 bg-purple-50 px-1 rounded">$$$1</span>')
+    html = html.replace(/\$([A-Z][a-zA-Z0-9]*)/g, '<span class="font-mono text-purple-600 bg-purple-50 px-1 rounded" contenteditable="false">$$$1</span>')
     // Line breaks
     if (multiline) {
       html = html.replace(/\n/g, '<br>')
     }
     return html
-  }, [multiline])
+  }, [multiline, links])
 
   // Convert HTML back to markdown
   const htmlToMarkdown = useCallback((html: string) => {
@@ -42,9 +50,10 @@ export function VisualTextInput({ value, onChange, placeholder, multiline, class
     markdown = markdown.replace(/<strong>(.*?)<\/strong>/g, '**$1**')
     markdown = markdown.replace(/<em>(.*?)<\/em>/g, '*$1*')
     markdown = markdown.replace(/<u>(.*?)<\/u>/g, '__$1__')
-    // Remove link and variable styling spans but keep content
-    markdown = markdown.replace(/<span class="text-blue-600 underline">\[link:([^\]]+)\]<\/span>/g, '[link:$1]')
-    markdown = markdown.replace(/<span class="font-mono text-purple-600 bg-purple-50 px-1 rounded">\$([A-Z][a-zA-Z0-9]*)<\/span>/g, '$$$$1')
+    // Restore link placeholders from <a data-link-id="..."> tags
+    markdown = markdown.replace(/<a[^>]*data-link-id="([^"]+)"[^>]*>.*?<\/a>/g, '[link:$1]')
+    // Remove variable styling spans but restore $VarName
+    markdown = markdown.replace(/<span[^>]*contenteditable="false"[^>]*>\$([A-Z][a-zA-Z0-9]*)<\/span>/g, '$$$1')
     // Remove any remaining HTML tags
     markdown = markdown.replace(/<[^>]+>/g, '')
     return markdown
