@@ -2,11 +2,12 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Mail, Menu, X, LayoutDashboard, FileJson, Code2, ScrollText } from "lucide-react"
+import { Mail, Menu, X, LayoutDashboard, FileJson, Code2, ScrollText, Newspaper } from "lucide-react"
 
 const NAV_ITEMS = [
   { href: "/", label: "Email Builder", icon: Mail },
   { href: "/live-editor", label: "Live Editor", icon: Code2 },
+  { href: "/newsletter-editor", label: "Newsletter Editor", icon: Newspaper },
   { href: "/architecture", label: "Architecture Diagram", icon: LayoutDashboard },
   { href: "/architecture/schema", label: "JSON Schema", icon: FileJson },
   { href: "/changelog", label: "Changelog", icon: ScrollText },
