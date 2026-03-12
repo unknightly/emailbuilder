@@ -546,14 +546,14 @@ function generateNewsletterHtml(data: NewsletterData): string {
 
         <!-- ╔══ SHOWCASE BLOCK — two-column layout ══╗ -->
         <tr>
-          <td style="padding:0;background-color:${SHOWCASE_BG};">
+          <td class="pad" style="padding:12px 22px 16px 22px;background-color:#ffffff;">
             <table border="0" cellpadding="0" cellspacing="0" width="100%"
-                   style="border-collapse:collapse;">
+                   style="border-collapse:collapse;background-color:${SHOWCASE_BG};border-radius:3px;">
               <tr>
 
                 <!-- LEFT: italic intro, heading, body, button (~55%) -->
                 <td valign="top" width="308"
-                    style="width:308px;padding:18px 14px 18px 22px;
+                    style="width:308px;padding:16px 12px 16px 18px;
                            background-color:${SHOWCASE_BG};vertical-align:top;">
 
                   <!-- italic intro line -->
@@ -581,7 +581,7 @@ function generateNewsletterHtml(data: NewsletterData): string {
 
                 <!-- RIGHT: showcase image (~45%) -->
                 <td valign="middle" width="248"
-                    style="width:248px;padding:18px 22px 18px 8px;
+                    style="width:248px;padding:16px 18px 16px 8px;
                            background-color:${SHOWCASE_BG};vertical-align:middle;">
                   <img src="${showcaseSrc}" alt="Showcase" width="218"
                        style="width:100%;max-width:218px;height:auto;display:block;border-radius:3px;">
