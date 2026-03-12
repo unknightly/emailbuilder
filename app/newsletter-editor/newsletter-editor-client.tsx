@@ -441,14 +441,13 @@ function generateNewsletterHtml(data: NewsletterData): string {
 
     </table>`
 
-  // ── Dark green divider bar (major group heading) ─────────────────────
+  // ── Group heading (plain bold black, no coloured bar) ───────────────
   const dividerBar = (text: string) => `
     <table border="0" cellpadding="0" cellspacing="0" width="100%"
-           style="border-collapse:collapse;margin-bottom:10px;">
+           style="border-collapse:collapse;margin-bottom:6px;margin-top:14px;">
       <tr>
-        <td style="background-color:${DARK_GREEN};padding:10px 14px;
-                   font-size:12px;font-family:Arial,Helvetica,sans-serif;
-                   font-weight:bold;color:#ffffff;line-height:1.3;">
+        <td style="padding:0 14px 4px 0;font-size:12px;font-family:Arial,Helvetica,sans-serif;
+                   font-weight:bold;color:#000000;line-height:1.4;">
           ${text}
         </td>
       </tr>
@@ -517,7 +516,7 @@ function generateNewsletterHtml(data: NewsletterData): string {
               <strong>Subject:</strong>&nbsp;${data.subject}
             </p>
             <p style="margin:0;font-size:16px;font-family:Arial,Helvetica,sans-serif;
-                      font-weight:bold;color:${MID_GREEN};line-height:1.35;">
+                      font-weight:bold;color:#000000;line-height:1.35;">
               ${data.incrementTitle}
             </p>
           </td>
@@ -594,10 +593,24 @@ function generateNewsletterHtml(data: NewsletterData): string {
 
         <!-- ╔══ FOOTER ══╗ -->
         <tr>
-          <td class="pad"
-              style="padding:12px 22px;background-color:#E0E0E0;">
-            <p style="margin:0;font-size:8px;font-family:Arial,Helvetica,sans-serif;
-                      color:#888888;line-height:1.7;text-align:center;">${data.footerText}</p>
+          <td style="padding:0;background-color:${DARK_GREEN};">
+            <table border="0" cellpadding="0" cellspacing="0" width="100%"
+                   style="border-collapse:collapse;">
+              <tr>
+                <!-- logo left -->
+                <td valign="middle" width="120"
+                    style="width:120px;padding:14px 12px 14px 22px;vertical-align:middle;">
+                  <img src="${logoSrc}" alt="TAL" width="90"
+                       style="width:90px;max-width:90px;height:auto;display:block;">
+                </td>
+                <!-- footer text right -->
+                <td valign="middle"
+                    style="padding:14px 22px 14px 8px;vertical-align:middle;">
+                  <p style="margin:0;font-size:8px;font-family:Arial,Helvetica,sans-serif;
+                            color:#ffffff;line-height:1.7;">${data.footerText}</p>
+                </td>
+              </tr>
+            </table>
           </td>
         </tr>
 
