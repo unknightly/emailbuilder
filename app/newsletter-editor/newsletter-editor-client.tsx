@@ -46,9 +46,10 @@ interface BulletEntry {
 
 interface ContentSection {
   id: string
-  groupDivider: string    // dark green bar above this section (blank = none)
+  groupDivider: string      // bold heading above this section (blank = none)
+  groupDividerDesc: string  // descriptive sub-text below the group heading (blank = none)
   sectionTitle: string
-  subGroupTitle: string   // optional sub-group label (e.g. "Group Life", "Investments")
+  subGroupTitle: string     // optional sub-group label (e.g. "Group Life", "Investments")
   bullets: BulletEntry[]
 }
 
@@ -92,6 +93,7 @@ function buildDefaultData(): NewsletterData {
       {
         id: id(),
         groupDivider: "",
+        groupDividerDesc: "",
         sectionTitle: "TAL Connect delivery highlights",
         subGroupTitle: "",
         bullets: [
@@ -134,6 +136,7 @@ function buildDefaultData(): NewsletterData {
       {
         id: id(),
         groupDivider: "New experiences aligned to our growth ambitions",
+        groupDividerDesc: "Our key priorities have been supporting TAL Connect delivery and ensuring member value through new arrangements.",
         sectionTitle: "Digital growth solutions",
         subGroupTitle: "",
         bullets: [
@@ -152,6 +155,7 @@ function buildDefaultData(): NewsletterData {
       {
         id: id(),
         groupDivider: "",
+        groupDividerDesc: "",
         sectionTitle: "Digital retirement solutions",
         subGroupTitle: "",
         bullets: [
@@ -171,6 +175,7 @@ function buildDefaultData(): NewsletterData {
       {
         id: id(),
         groupDivider: "",
+        groupDividerDesc: "",
         sectionTitle: "Digital health solutions",
         subGroupTitle: "",
         bullets: [
@@ -189,6 +194,7 @@ function buildDefaultData(): NewsletterData {
       {
         id: id(),
         groupDivider: "",
+        groupDividerDesc: "",
         sectionTitle: "Policy administration solutions",
         subGroupTitle: "Group Life",
         bullets: [
@@ -216,6 +222,7 @@ function buildDefaultData(): NewsletterData {
       {
         id: id(),
         groupDivider: "",
+        groupDividerDesc: "",
         sectionTitle: "Investments",
         subGroupTitle: "",
         bullets: [
@@ -243,6 +250,7 @@ function buildDefaultData(): NewsletterData {
       {
         id: id(),
         groupDivider: "Delivering and maintaining a first-class technology stack",
+        groupDividerDesc: "Here are our most recent improvements in DevOps, scalability, and user-centric features showcasing our commitment to innovation and excellence.",
         sectionTitle: "Technology excellence",
         subGroupTitle: "",
         bullets: [
@@ -441,23 +449,30 @@ function generateNewsletterHtml(data: NewsletterData): string {
 
     </table>`
 
-  // ── Group heading (plain bold black, no coloured bar) ───────────────
-  const dividerBar = (text: string) => `
+  // ── Group heading with optional description ─────────────────────────
+  const dividerBar = (title: string, desc: string) => `
     <table border="0" cellpadding="0" cellspacing="0" width="100%"
            style="border-collapse:collapse;margin-bottom:6px;margin-top:14px;">
       <tr>
-        <td style="padding:0 14px 4px 0;font-size:12px;font-family:Arial,Helvetica,sans-serif;
+        <td style="padding:0 0 2px 0;font-size:12px;font-family:Arial,Helvetica,sans-serif;
                    font-weight:bold;color:#000000;line-height:1.4;">
-          ${text}
+          ${title}
         </td>
       </tr>
+      ${desc ? `
+      <tr>
+        <td style="padding:2px 0 4px 0;font-size:11px;font-family:Arial,Helvetica,sans-serif;
+                   color:#000000;line-height:1.5;">
+          ${desc}
+        </td>
+      </tr>` : ""}
     </table>`
 
   // ── Render all sections – first section group has no divider ─────────
   // Sections that follow a group-divider are identified by having a
   // non-empty groupDivider field; otherwise they flow straight on.
   const allSectionsHtml = data.sections.map((sec) => `
-    ${sec.groupDivider ? dividerBar(sec.groupDivider) : ""}
+    ${sec.groupDivider ? dividerBar(sec.groupDivider, sec.groupDividerDesc) : ""}
     ${sectionBlock(sec)}
   `).join("")
 
@@ -828,7 +843,13 @@ function SectionEditor({
             value={section.groupDivider}
             onChange={(e) => onChange({ ...section, groupDivider: e.target.value })}
             className="h-6 text-xs border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 text-muted-foreground"
-            placeholder="Group divider bar (optional, e.g. New experiences aligned to our growth ambitions)..."
+            placeholder="Group heading (optional, e.g. New experiences aligned to our growth ambitions)..."
+          />
+          <Input
+            value={section.groupDividerDesc}
+            onChange={(e) => onChange({ ...section, groupDividerDesc: e.target.value })}
+            className="h-6 text-xs border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 text-muted-foreground/70"
+            placeholder="Group heading description (optional)..."
           />
           <Input
             value={section.sectionTitle}
@@ -940,6 +961,7 @@ export default function NewsletterEditorPage() {
         {
           id: createId(),
           groupDivider: "",
+          groupDividerDesc: "",
           sectionTitle: "New Section",
           subGroupTitle: "",
           bullets: [
