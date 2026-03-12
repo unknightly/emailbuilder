@@ -544,37 +544,51 @@ function generateNewsletterHtml(data: NewsletterData): string {
           </td>
         </tr>
 
-        <!-- ╔══ SHOWCASE BLOCK ══╗ -->
+        <!-- ╔══ SHOWCASE BLOCK — two-column layout ══╗ -->
         <tr>
-          <td class="pad" style="padding:16px 22px 20px 22px;background-color:${SHOWCASE_BG};">
+          <td style="padding:0;background-color:${SHOWCASE_BG};">
+            <table border="0" cellpadding="0" cellspacing="0" width="100%"
+                   style="border-collapse:collapse;">
+              <tr>
 
-            <!-- italic intro line -->
-            <p style="margin:0 0 12px 0;font-size:11px;font-family:Arial,Helvetica,sans-serif;
-                      color:#444444;line-height:1.6;font-style:italic;">${data.showcaseIntroText}</p>
+                <!-- LEFT: italic intro, heading, body, button (~55%) -->
+                <td valign="top" width="308"
+                    style="width:308px;padding:18px 14px 18px 22px;
+                           background-color:${SHOWCASE_BG};vertical-align:top;">
 
-            <!-- bold green heading -->
-            <p style="margin:0 0 6px 0;font-size:13px;font-family:Arial,Helvetica,sans-serif;
-                      font-weight:bold;color:${MID_GREEN};line-height:1.3;">${data.feedbackHeading}</p>
+                  <!-- italic intro line -->
+                  <p style="margin:0 0 12px 0;font-size:11px;font-family:Arial,Helvetica,sans-serif;
+                            color:#444444;line-height:1.6;font-style:italic;">${data.showcaseIntroText}</p>
 
-            <!-- body copy -->
-            <p style="margin:0 0 14px 0;font-size:11px;font-family:Arial,Helvetica,sans-serif;
-                      color:#000000;line-height:1.6;">${data.feedbackBody}</p>
+                  <!-- bold green heading -->
+                  <p style="margin:0 0 6px 0;font-size:13px;font-family:Arial,Helvetica,sans-serif;
+                            font-weight:bold;color:${MID_GREEN};line-height:1.3;">${data.feedbackHeading}</p>
 
-            <!-- Watch Showcase button -->
-            ${data.showcaseVideoLink
-              ? `<p style="margin:0 0 16px 0;">
-                   <a href="${data.showcaseVideoLink}" target="_blank"
-                      style="display:inline-block;padding:8px 22px;background-color:${LIGHT_GREEN};
-                             color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:11px;
-                             font-weight:bold;text-decoration:none;border-radius:3px;
-                             mso-padding-alt:8px 22px;">Watch Showcase</a>
-                 </p>`
-              : `<p style="margin:0 0 16px 0;"></p>`}
+                  <!-- body copy -->
+                  <p style="margin:0 0 14px 0;font-size:11px;font-family:Arial,Helvetica,sans-serif;
+                            color:#000000;line-height:1.6;">${data.feedbackBody}</p>
 
-            <!-- showcase image -->
-            <img src="${showcaseSrc}" alt="Showcase" width="556"
-                 style="width:100%;max-width:556px;height:auto;display:block;border-radius:3px;">
+                  <!-- Watch Showcase button -->
+                  ${data.showcaseVideoLink
+                    ? `<a href="${data.showcaseVideoLink}" target="_blank"
+                          style="display:inline-block;padding:8px 22px;background-color:${LIGHT_GREEN};
+                                 color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:11px;
+                                 font-weight:bold;text-decoration:none;border-radius:3px;
+                                 mso-padding-alt:8px 22px;">Watch Showcase</a>`
+                    : ""}
 
+                </td>
+
+                <!-- RIGHT: showcase image (~45%) -->
+                <td valign="middle" width="248"
+                    style="width:248px;padding:18px 22px 18px 8px;
+                           background-color:${SHOWCASE_BG};vertical-align:middle;">
+                  <img src="${showcaseSrc}" alt="Showcase" width="218"
+                       style="width:100%;max-width:218px;height:auto;display:block;border-radius:3px;">
+                </td>
+
+              </tr>
+            </table>
           </td>
         </tr>
 
