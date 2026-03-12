@@ -112,7 +112,7 @@ function buildDefaultData(): NewsletterData {
             valueStatement:
               "Increased member engagement, reduced time for Application lodgement, reduced rework / manual process, and improved decision time (available to ~1.5m insured members)",
             demoNote:
-              "Integrated with URE v27, completed NMO End-To-End journey, PYS election response capture, added "Submit Declaration" acknowledgement, updated NMO Contentful models for tailored cover",
+              "Integrated with URE v27, completed NMO End-To-End journey, PYS election response capture, added \u2018Submit Declaration\u2019 acknowledgement, updated NMO Contentful models for tailored cover",
             videoLink: "https://talconnect-my.sharepoint.com/",
           },
           {
@@ -123,7 +123,7 @@ function buildDefaultData(): NewsletterData {
             valueStatement:
               "Increased member engagement, reduced time for Application lodgement, reduced rework / manual process, and improved decision time (available to ~910,000 insured members)",
             demoNote:
-              "Implemented occupation category unit rates for Death/TDP/IP, unitised death plan max rules per occupation category unit rates, TPD max cover rules, restrictions for members in a "decline" occupation",
+              "Implemented occupation category unit rates for Death/TDP/IP, unitised death plan max rules per occupation category unit rates, TPD max cover rules, restrictions for members in a \u2018decline\u2019 occupation",
             videoLink: "",
           },
         ],
