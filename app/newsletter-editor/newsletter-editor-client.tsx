@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import { AppHeader } from "@/components/email-builder/app-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -791,6 +791,13 @@ export default function NewsletterEditorPage() {
 
   const generatedHtml = useMemo(() => generateNewsletterHtml(data), [data])
 
+  // Debounced preview — only update the iframe after 600 ms of inactivity
+  const [previewHtml, setPreviewHtml] = useState<string>(() => generateNewsletterHtml(buildDefaultData()))
+  useEffect(() => {
+    const timer = setTimeout(() => setPreviewHtml(generatedHtml), 600)
+    return () => clearTimeout(timer)
+  }, [generatedHtml])
+
   // Open a quick-edit modal for top-level text fields
   const openEdit = (field: SimpleField, label: string, multiline?: boolean) => {
     setEditValue(data[field])
@@ -1086,8 +1093,7 @@ export default function NewsletterEditorPage() {
                 </div>
               ) : (
                 <iframe
-                  key={generatedHtml}
-                  srcDoc={generatedHtml}
+                  srcDoc={previewHtml}
                   title="Newsletter Preview"
                   className="h-full w-full border-0 bg-white"
                   sandbox="allow-same-origin"
@@ -1106,8 +1112,7 @@ export default function NewsletterEditorPage() {
           )}
           {activeTab === "preview" && (
             <iframe
-              key={generatedHtml}
-              srcDoc={generatedHtml}
+              srcDoc={previewHtml}
               title="Newsletter Preview"
               className="h-full w-full border-0 bg-white"
               sandbox="allow-same-origin"
