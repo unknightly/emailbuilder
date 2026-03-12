@@ -575,21 +575,16 @@ function BulletEditor({
 }) {
   return (
     <div className="border rounded-lg p-3 bg-card flex flex-col gap-2.5">
-      <div className="flex items-center gap-1.5">
-        <span className="text-xs font-medium text-muted-foreground flex-1 truncate">
-          {bullet.title || "Untitled bullet"}
-        </span>
-        <div className="flex items-center gap-0.5">
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onMoveUp} disabled={isFirst} title="Move up">
-            <ChevronUp className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onMoveDown} disabled={isLast} title="Move down">
-            <ChevronDown className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={onDelete} title="Delete bullet">
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        </div>
+      <div className="flex items-center justify-end gap-0.5">
+        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onMoveUp} disabled={isFirst} title="Move up">
+          <ChevronUp className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onMoveDown} disabled={isLast} title="Move down">
+          <ChevronDown className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={onDelete} title="Delete bullet">
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
       </div>
 
       <div className="flex flex-col gap-2">
