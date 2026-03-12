@@ -46,8 +46,9 @@ interface BulletEntry {
 
 interface ContentSection {
   id: string
+  groupDivider: string    // dark green bar above this section (blank = none)
   sectionTitle: string
-  subGroupTitle: string  // optional sub-group label (e.g. "Group Life", "Investments")
+  subGroupTitle: string   // optional sub-group label (e.g. "Group Life", "Investments")
   bullets: BulletEntry[]
 }
 
@@ -90,6 +91,7 @@ function buildDefaultData(): NewsletterData {
       // ── TAL Connect delivery highlights ──
       {
         id: id(),
+        groupDivider: "",
         sectionTitle: "TAL Connect delivery highlights",
         subGroupTitle: "",
         bullets: [
@@ -131,6 +133,7 @@ function buildDefaultData(): NewsletterData {
       // ── Digital growth solutions ──
       {
         id: id(),
+        groupDivider: "New experiences aligned to our growth ambitions",
         sectionTitle: "Digital growth solutions",
         subGroupTitle: "",
         bullets: [
@@ -148,6 +151,7 @@ function buildDefaultData(): NewsletterData {
       // ── Digital retirement solutions ──
       {
         id: id(),
+        groupDivider: "",
         sectionTitle: "Digital retirement solutions",
         subGroupTitle: "",
         bullets: [
@@ -166,6 +170,7 @@ function buildDefaultData(): NewsletterData {
       // ── Digital health solutions ──
       {
         id: id(),
+        groupDivider: "",
         sectionTitle: "Digital health solutions",
         subGroupTitle: "",
         bullets: [
@@ -183,6 +188,7 @@ function buildDefaultData(): NewsletterData {
       // ── Policy administration solutions ──
       {
         id: id(),
+        groupDivider: "",
         sectionTitle: "Policy administration solutions",
         subGroupTitle: "Group Life",
         bullets: [
@@ -209,6 +215,7 @@ function buildDefaultData(): NewsletterData {
       // ── Investments ──
       {
         id: id(),
+        groupDivider: "",
         sectionTitle: "Investments",
         subGroupTitle: "",
         bullets: [
@@ -235,8 +242,9 @@ function buildDefaultData(): NewsletterData {
       // ── Technology excellence ──
       {
         id: id(),
-        sectionTitle: "Delivering and maintaining a first-class technology stack",
-        subGroupTitle: "Technology excellence",
+        groupDivider: "Delivering and maintaining a first-class technology stack",
+        sectionTitle: "Technology excellence",
+        subGroupTitle: "",
         bullets: [
           {
             id: id(),
@@ -329,183 +337,263 @@ function buildDefaultData(): NewsletterData {
 // HTML Generator
 // ────────────────────────────────────────────────
 
-const GREEN = "#328600"
-const LIGHT_GREEN = "#80C342"
-const SECTION_BG = "#EDF7F3"
-const OUTER_BG = "#F7F7F7"
-const ROW_BORDER = "#B3E5A1"
+// Colours extracted directly from the original Word template
+const DARK_GREEN   = "#215732"   // section divider bars ("New experiences...", "Technology excellence")
+const MID_GREEN    = "#328600"   // headings, value statements, links
+const LIGHT_GREEN  = "#80C342"   // Watch Demo / Watch Showcase buttons
+const SECTION_BG   = "#EDF7F3"   // light mint cell background
+const ACCENT_BAR   = "#4C9A2A"   // 4 px left border accent on section header cells
+const ROW_BORDER   = "#C8E6B8"   // hairline between demo note and bullets
+const OUTER_BG     = "#F7F7F7"
+const SHOWCASE_BG  = "#F1F1F1"
 
-const PLACEHOLDER_LOGO = `https://placehold.co/200x50/328600/ffffff?text=TAL+Logo`
-const PLACEHOLDER_BANNER = `https://placehold.co/600x160/328600/ffffff?text=Banner+Image`
-const PLACEHOLDER_SHOWCASE = `https://placehold.co/560x160/EDF7F3/328600?text=Showcase+Image`
+const PLACEHOLDER_LOGO     = `https://placehold.co/180x46/215732/ffffff?text=TAL+Logo`
+const PLACEHOLDER_BANNER   = `https://placehold.co/600x170/215732/ffffff?text=Banner+Image`
+const PLACEHOLDER_SHOWCASE = `https://placehold.co/552x160/EDF7F3/328600?text=Showcase+Image`
 
 function generateNewsletterHtml(data: NewsletterData): string {
-  const logoSrc = data.logoImageUrl || PLACEHOLDER_LOGO
-  const bannerSrc = data.bannerImageUrl || PLACEHOLDER_BANNER
+  const logoSrc     = data.logoImageUrl    || PLACEHOLDER_LOGO
+  const bannerSrc   = data.bannerImageUrl  || PLACEHOLDER_BANNER
   const showcaseSrc = data.showcaseImageUrl || PLACEHOLDER_SHOWCASE
 
-  const watchDemoButton = (link: string) =>
+  // ── Reusable button snippet ──────────────────────────────────────────
+  const watchDemoBtn = (link: string, label = "Watch Demo") =>
     link
-      ? `<td align="right" valign="middle" style="padding:4px 0 4px 8px;width:120px;white-space:nowrap;">
-          <a href="${link}" style="display:inline-block;padding:6px 14px;background-color:${LIGHT_GREEN};color:#ffffff;font-family:Arial,sans-serif;font-size:11px;font-weight:bold;text-decoration:none;border-radius:3px;" target="_blank">Watch Demo</a>
-        </td>`
-      : ""
+      ? `<td align="right" valign="middle" style="padding:4px 0 4px 10px;width:110px;white-space:nowrap;">
+           <a href="${link}" target="_blank"
+              style="display:inline-block;padding:6px 14px;background-color:${LIGHT_GREEN};color:#ffffff;
+                     font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:bold;
+                     text-decoration:none;border-radius:3px;mso-padding-alt:6px 14px;">${label}</a>
+         </td>`
+      : `<td style="width:110px;padding:0;"></td>`
 
-  const bulletRows = (bullets: BulletEntry[]) =>
-    bullets
-      .map(
-        (b) => `
-      <tr>
-        <td style="padding:8px 0 2px 0;">
-          <ul style="margin:0 0 4px 0;padding-left:20px;">
-            <li style="font-size:10.5pt;font-family:Arial,sans-serif;color:#000000;font-weight:bold;margin:0;">${b.title}</li>
-          </ul>
-          <p style="margin:4px 0 4px 20px;font-size:10.5pt;font-family:Arial,sans-serif;color:#000000;line-height:1.5;">${b.description}</p>
-          ${b.valueStatement ? `<p style="margin:0 0 6px 20px;font-size:10.5pt;font-family:Arial,sans-serif;color:${GREEN};font-weight:bold;line-height:1.5;">${b.valueStatement}</p>` : ""}
-          ${
-            b.demoNote || b.videoLink
-              ? `<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;border-top:1px solid ${ROW_BORDER};margin-top:6px;">
-              <tr>
-                <td valign="middle" style="padding:6px 0;font-size:10pt;font-family:Arial,sans-serif;color:#444444;line-height:1.4;">${b.demoNote}</td>
-                ${watchDemoButton(b.videoLink)}
-              </tr>
-            </table>`
-              : ""
-          }
-        </td>
-      </tr>`
-      )
-      .join("\n")
+  // ── Individual bullet row ────────────────────────────────────────────
+  const bulletRow = (b: BulletEntry) => `
+    <tr>
+      <td style="padding:10px 14px 6px 14px;border-top:1px solid ${ROW_BORDER};">
 
-  const sectionHtml = (sec: ContentSection) => `
-    <!-- Section: ${sec.sectionTitle} -->
-    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:14px;">
+        <!-- bullet title -->
+        <p style="margin:0 0 5px 0;font-size:11px;font-family:Arial,Helvetica,sans-serif;
+                  color:#000000;font-weight:bold;line-height:1.4;">
+          &#8226;&nbsp;${b.title}
+        </p>
+
+        <!-- description -->
+        ${b.description ? `<p style="margin:0 0 5px 18px;font-size:11px;font-family:Arial,Helvetica,sans-serif;
+                  color:#000000;line-height:1.5;">${b.description}</p>` : ""}
+
+        <!-- value statement (green) -->
+        ${b.valueStatement ? `<p style="margin:0 0 5px 18px;font-size:11px;font-family:Arial,Helvetica,sans-serif;
+                  color:${MID_GREEN};font-weight:bold;line-height:1.5;">${b.valueStatement}</p>` : ""}
+
+        <!-- demo note + watch demo button -->
+        ${b.demoNote || b.videoLink ? `
+        <table border="0" cellpadding="0" cellspacing="0" width="100%"
+               style="border-collapse:collapse;margin-top:6px;">
+          <tr>
+            <td valign="middle"
+                style="padding:4px 0;font-size:10px;font-family:Arial,Helvetica,sans-serif;
+                       color:#555555;font-style:italic;line-height:1.4;">
+              ${b.demoNote || ""}
+            </td>
+            ${watchDemoBtn(b.videoLink)}
+          </tr>
+        </table>` : ""}
+
+      </td>
+    </tr>`
+
+  // ── Section block (mint green card with left accent bar) ─────────────
+  const sectionBlock = (sec: ContentSection) => `
+    <!-- ── Section: ${sec.sectionTitle} ── -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%"
+           style="border-collapse:collapse;margin-bottom:10px;">
+
+      <!-- section header row -->
       <tr>
-        <td valign="top" style="background:${SECTION_BG};border-bottom:3px solid ${LIGHT_GREEN};padding:7px 10px;font-size:10.5pt;font-family:Arial,sans-serif;font-weight:bold;color:#000000;">
+        <td valign="middle"
+            style="background-color:${SECTION_BG};border-left:4px solid ${ACCENT_BAR};
+                   padding:8px 14px;font-size:11px;font-family:Arial,Helvetica,sans-serif;
+                   font-weight:bold;color:#000000;line-height:1.3;">
           ${sec.sectionTitle}
         </td>
       </tr>
-      ${
-        sec.subGroupTitle
-          ? `<tr><td style="background:${SECTION_BG};padding:4px 10px 0 10px;font-size:10pt;font-family:Arial,sans-serif;font-weight:bold;color:${GREEN};">${sec.subGroupTitle}</td></tr>`
-          : ""
-      }
+
+      ${sec.subGroupTitle ? `
+      <!-- sub-group label (e.g. "Group Life", "Investments") -->
       <tr>
-        <td style="background:${SECTION_BG};padding:2px 10px 8px 10px;">
-          <table border="0" cellpadding="0" cellspacing="0" width="100%">
-            ${bulletRows(sec.bullets)}
+        <td style="background-color:${SECTION_BG};border-left:4px solid ${ACCENT_BAR};
+                   padding:4px 14px 0 14px;font-size:11px;font-family:Arial,Helvetica,sans-serif;
+                   font-weight:bold;color:${MID_GREEN};">
+          ${sec.subGroupTitle}
+        </td>
+      </tr>` : ""}
+
+      <!-- bullet rows -->
+      <tr>
+        <td style="background-color:${SECTION_BG};border-left:4px solid ${ACCENT_BAR};padding:0 0 6px 0;">
+          <table border="0" cellpadding="0" cellspacing="0" width="100%"
+                 style="border-collapse:collapse;">
+            ${sec.bullets.map(bulletRow).join("")}
           </table>
+        </td>
+      </tr>
+
+    </table>`
+
+  // ── Dark green divider bar (major group heading) ─────────────────────
+  const dividerBar = (text: string) => `
+    <table border="0" cellpadding="0" cellspacing="0" width="100%"
+           style="border-collapse:collapse;margin-bottom:10px;">
+      <tr>
+        <td style="background-color:${DARK_GREEN};padding:10px 14px;
+                   font-size:12px;font-family:Arial,Helvetica,sans-serif;
+                   font-weight:bold;color:#ffffff;line-height:1.3;">
+          ${text}
         </td>
       </tr>
     </table>`
 
-  const allSections = data.sections.map(sectionHtml).join("\n")
+  // ── Render all sections – first section group has no divider ─────────
+  // Sections that follow a group-divider are identified by having a
+  // non-empty groupDivider field; otherwise they flow straight on.
+  const allSectionsHtml = data.sections.map((sec) => `
+    ${sec.groupDivider ? dividerBar(sec.groupDivider) : ""}
+    ${sectionBlock(sec)}
+  `).join("")
 
+  // ── Full email HTML ──────────────────────────────────────────────────
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html lang="en">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>${data.subject}</title>
   <style type="text/css">
     body { -ms-text-size-adjust:100%; -webkit-text-size-adjust:100%; margin:0; padding:0; background-color:${OUTER_BG}; }
-    table { border-spacing:0; }
-    table td { border-collapse:collapse; }
-    img { display:block; max-width:100%; height:auto; border:0; }
+    table { border-spacing:0; mso-table-lspace:0pt; mso-table-rspace:0pt; }
+    td { border-collapse:collapse; }
+    img { display:block; max-width:100%; height:auto; border:0; outline:none; text-decoration:none; }
+    a { color:${MID_GREEN}; }
     @media screen and (max-width:620px) {
-      .email-container { width:100% !important; max-width:100% !important; }
-      .container-pad { padding-left:12px !important; padding-right:12px !important; }
+      .wrap { width:100% !important; max-width:100% !important; }
+      .pad  { padding-left:14px !important; padding-right:14px !important; }
     }
   </style>
 </head>
-<body bgcolor="${OUTER_BG}" style="margin:0;padding:0;">
+<body bgcolor="${OUTER_BG}" style="margin:0;padding:0;background-color:${OUTER_BG};">
 
-<table role="presentation" border="0" width="100%" cellpadding="0" cellspacing="0" bgcolor="${OUTER_BG}">
+<!-- outer centering table -->
+<table role="presentation" border="0" width="100%" cellpadding="0" cellspacing="0"
+       style="background-color:${OUTER_BG};">
   <tr>
-    <td align="center" valign="top" style="padding:20px 0;">
+    <td align="center" style="padding:20px 10px;">
 
-      <table role="presentation" border="0" width="600" cellpadding="0" cellspacing="0" class="email-container" style="width:600px;max-width:600px;background-color:#ffffff;">
+      <!-- 600 px email shell -->
+      <table role="presentation" class="wrap" border="0" cellpadding="0" cellspacing="0"
+             style="width:600px;max-width:600px;background-color:#ffffff;">
 
-        <!-- ── Logo ── -->
+        <!-- ╔══ LOGO ══╗ -->
         <tr>
-          <td class="container-pad" style="padding:20px 24px 12px 24px;background-color:#ffffff;">
-            <img src="${logoSrc}" alt="TAL" width="200" style="width:200px;max-width:200px;height:auto;">
+          <td class="pad" style="padding:18px 22px 14px 22px;background-color:#ffffff;">
+            <img src="${logoSrc}" alt="TAL" width="180"
+                 style="width:180px;max-width:180px;height:auto;">
           </td>
         </tr>
 
-        <!-- ── Banner image ── -->
+        <!-- ╔══ BANNER ══╗ -->
         <tr>
-          <td align="center" style="padding:0;background-color:#ffffff;">
-            <img src="${bannerSrc}" alt="${data.incrementTitle}" width="600" style="width:600px;max-width:100%;height:auto;display:block;">
+          <td style="padding:0;line-height:0;font-size:0;">
+            <img src="${bannerSrc}" alt="${data.incrementTitle}" width="600"
+                 style="width:100%;max-width:600px;height:auto;display:block;">
           </td>
         </tr>
 
-        <!-- ── Subject / title bar ── -->
+        <!-- ╔══ SUBJECT + INCREMENT TITLE ══╗ -->
         <tr>
-          <td class="container-pad" style="padding:16px 24px 0 24px;background-color:#ffffff;">
-            <p style="margin:0 0 4px 0;font-size:9pt;font-family:Arial,sans-serif;color:#555555;"><strong>Subject:</strong> ${data.subject}</p>
-            <p style="margin:0 0 12px 0;font-size:15px;font-family:Arial,sans-serif;font-weight:bold;color:${GREEN};line-height:1.4;">${data.incrementTitle}</p>
+          <td class="pad" style="padding:16px 22px 6px 22px;background-color:#ffffff;">
+            <p style="margin:0 0 2px 0;font-size:9px;font-family:Arial,Helvetica,sans-serif;color:#666666;">
+              <strong>Subject:</strong>&nbsp;${data.subject}
+            </p>
+            <p style="margin:0;font-size:16px;font-family:Arial,Helvetica,sans-serif;
+                      font-weight:bold;color:${MID_GREEN};line-height:1.35;">
+              ${data.incrementTitle}
+            </p>
           </td>
         </tr>
 
-        <!-- ── Intro ── -->
+        <!-- ╔══ INTRO TEXT ══╗ -->
         <tr>
-          <td class="container-pad" style="padding:0 24px 8px 24px;background-color:#ffffff;">
-            <p style="margin:0 0 12px 0;font-size:10.5pt;font-family:Arial,sans-serif;color:#000000;line-height:1.5;">${data.introText}</p>
-            <p style="margin:0 0 4px 0;font-size:10.5pt;font-family:Arial,sans-serif;font-weight:bold;color:#000000;line-height:1.5;">${data.introSubHeading}</p>
-            <p style="margin:0 0 16px 0;font-size:10.5pt;font-family:Arial,sans-serif;color:#000000;line-height:1.5;">${data.introSubText}</p>
+          <td class="pad" style="padding:10px 22px 4px 22px;background-color:#ffffff;">
+            <p style="margin:0 0 10px 0;font-size:11px;font-family:Arial,Helvetica,sans-serif;
+                      color:#000000;line-height:1.6;">${data.introText}</p>
+            ${data.introSubHeading ? `
+            <p style="margin:0 0 4px 0;font-size:11px;font-family:Arial,Helvetica,sans-serif;
+                      font-weight:bold;color:#000000;line-height:1.4;">${data.introSubHeading}</p>` : ""}
+            ${data.introSubText ? `
+            <p style="margin:0 0 10px 0;font-size:11px;font-family:Arial,Helvetica,sans-serif;
+                      color:#000000;line-height:1.6;">${data.introSubText}</p>` : ""}
           </td>
         </tr>
 
-        <!-- ── Content sections ── -->
+        <!-- ╔══ CONTENT SECTIONS ══╗ -->
         <tr>
-          <td class="container-pad" style="padding:0 24px 8px 24px;background-color:#ffffff;">
-            ${allSections}
+          <td class="pad" style="padding:4px 22px 4px 22px;background-color:#ffffff;">
+            ${allSectionsHtml}
           </td>
         </tr>
 
-        <!-- ── Feedback / Showcase banner ── -->
+        <!-- ╔══ SHOWCASE INTRO (italic, light grey) ══╗ -->
         <tr>
-          <td style="padding:0;background-color:#ffffff;">
-            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#F1F1F1;border-collapse:collapse;">
-              <tr>
-                <td class="container-pad" style="padding:14px 24px 10px 24px;font-size:10.5pt;font-family:Arial,sans-serif;color:#000000;line-height:1.5;">
-                  ${data.showcaseIntroText}
-                </td>
-              </tr>
-              <tr>
-                <td class="container-pad" style="padding:4px 24px 16px 24px;">
-                  <p style="margin:0 0 6px 0;font-size:13pt;font-family:Arial,sans-serif;font-weight:bold;color:${GREEN};">${data.feedbackHeading}</p>
-                  <p style="margin:0 0 12px 0;font-size:10.5pt;font-family:Arial,sans-serif;color:#000000;line-height:1.5;">${data.feedbackBody}</p>
-                  ${
-                    data.showcaseVideoLink
-                      ? `<a href="${data.showcaseVideoLink}" style="display:inline-block;padding:8px 20px;background-color:${LIGHT_GREEN};color:#ffffff;font-family:Arial,sans-serif;font-size:11px;font-weight:bold;text-decoration:none;border-radius:3px;" target="_blank">Watch Showcase</a>`
-                      : ""
-                  }
-                </td>
-              </tr>
-              <tr>
-                <td class="container-pad" style="padding:0 24px 16px 24px;">
-                  <img src="${showcaseSrc}" alt="Showcase" width="552" style="width:100%;max-width:552px;height:auto;display:block;border-radius:4px;">
-                </td>
-              </tr>
-            </table>
+          <td class="pad"
+              style="padding:14px 22px 10px 22px;background-color:${SHOWCASE_BG};
+                     font-size:11px;font-family:Arial,Helvetica,sans-serif;
+                     color:#444444;line-height:1.6;font-style:italic;">
+            ${data.showcaseIntroText}
           </td>
         </tr>
 
-        <!-- ── Footer ── -->
+        <!-- ╔══ FEEDBACK HEADING + BODY + BUTTON ══╗ -->
         <tr>
-          <td class="container-pad" style="padding:14px 24px;background-color:#E8E8E8;">
-            <p style="margin:0;font-size:9px;font-family:Arial,sans-serif;color:#888888;line-height:1.6;text-align:center;">${data.footerText}</p>
+          <td class="pad" style="padding:10px 22px 14px 22px;background-color:${SHOWCASE_BG};">
+            <p style="margin:0 0 6px 0;font-size:13px;font-family:Arial,Helvetica,sans-serif;
+                      font-weight:bold;color:${MID_GREEN};line-height:1.3;">${data.feedbackHeading}</p>
+            <p style="margin:0 0 12px 0;font-size:11px;font-family:Arial,Helvetica,sans-serif;
+                      color:#000000;line-height:1.6;">${data.feedbackBody}</p>
+            ${data.showcaseVideoLink
+              ? `<a href="${data.showcaseVideoLink}" target="_blank"
+                    style="display:inline-block;padding:8px 20px;background-color:${LIGHT_GREEN};
+                           color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:11px;
+                           font-weight:bold;text-decoration:none;border-radius:3px;">Watch Showcase</a>`
+              : ""}
+          </td>
+        </tr>
+
+        <!-- ╔══ SHOWCASE IMAGE ══╗ -->
+        <tr>
+          <td class="pad" style="padding:0 22px 18px 22px;background-color:${SHOWCASE_BG};">
+            <img src="${showcaseSrc}" alt="Showcase" width="556"
+                 style="width:100%;max-width:556px;height:auto;display:block;border-radius:3px;">
+          </td>
+        </tr>
+
+        <!-- ╔══ FOOTER ══╗ -->
+        <tr>
+          <td class="pad"
+              style="padding:12px 22px;background-color:#E0E0E0;">
+            <p style="margin:0;font-size:8px;font-family:Arial,Helvetica,sans-serif;
+                      color:#888888;line-height:1.7;text-align:center;">${data.footerText}</p>
           </td>
         </tr>
 
       </table>
+      <!-- /600 px shell -->
 
     </td>
   </tr>
 </table>
+
 </body>
 </html>`
 }
@@ -710,6 +798,12 @@ function SectionEditor({
         <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
         <div className="flex-1 flex flex-col gap-1.5 min-w-0">
           <Input
+            value={section.groupDivider}
+            onChange={(e) => onChange({ ...section, groupDivider: e.target.value })}
+            className="h-6 text-xs border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 text-muted-foreground"
+            placeholder="Group divider bar (optional, e.g. New experiences aligned to our growth ambitions)..."
+          />
+          <Input
             value={section.sectionTitle}
             onChange={(e) => onChange({ ...section, sectionTitle: e.target.value })}
             className="h-7 text-sm font-medium border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 flex-1"
@@ -818,6 +912,7 @@ export default function NewsletterEditorPage() {
         ...d.sections,
         {
           id: createId(),
+          groupDivider: "",
           sectionTitle: "New Section",
           subGroupTitle: "",
           bullets: [
