@@ -544,37 +544,37 @@ function generateNewsletterHtml(data: NewsletterData): string {
           </td>
         </tr>
 
-        <!-- ╔══ SHOWCASE INTRO (italic, light grey) ══╗ -->
+        <!-- ╔══ SHOWCASE BLOCK ══╗ -->
         <tr>
-          <td class="pad"
-              style="padding:14px 22px 10px 22px;background-color:${SHOWCASE_BG};
-                     font-size:11px;font-family:Arial,Helvetica,sans-serif;
-                     color:#444444;line-height:1.6;font-style:italic;">
-            ${data.showcaseIntroText}
-          </td>
-        </tr>
+          <td class="pad" style="padding:16px 22px 20px 22px;background-color:${SHOWCASE_BG};">
 
-        <!-- ╔══ FEEDBACK HEADING + BODY + BUTTON ══╗ -->
-        <tr>
-          <td class="pad" style="padding:10px 22px 14px 22px;background-color:${SHOWCASE_BG};">
+            <!-- italic intro line -->
+            <p style="margin:0 0 12px 0;font-size:11px;font-family:Arial,Helvetica,sans-serif;
+                      color:#444444;line-height:1.6;font-style:italic;">${data.showcaseIntroText}</p>
+
+            <!-- bold green heading -->
             <p style="margin:0 0 6px 0;font-size:13px;font-family:Arial,Helvetica,sans-serif;
                       font-weight:bold;color:${MID_GREEN};line-height:1.3;">${data.feedbackHeading}</p>
-            <p style="margin:0 0 12px 0;font-size:11px;font-family:Arial,Helvetica,sans-serif;
-                      color:#000000;line-height:1.6;">${data.feedbackBody}</p>
-            ${data.showcaseVideoLink
-              ? `<a href="${data.showcaseVideoLink}" target="_blank"
-                    style="display:inline-block;padding:8px 20px;background-color:${LIGHT_GREEN};
-                           color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:11px;
-                           font-weight:bold;text-decoration:none;border-radius:3px;">Watch Showcase</a>`
-              : ""}
-          </td>
-        </tr>
 
-        <!-- ╔══ SHOWCASE IMAGE ══╗ -->
-        <tr>
-          <td class="pad" style="padding:0 22px 18px 22px;background-color:${SHOWCASE_BG};">
+            <!-- body copy -->
+            <p style="margin:0 0 14px 0;font-size:11px;font-family:Arial,Helvetica,sans-serif;
+                      color:#000000;line-height:1.6;">${data.feedbackBody}</p>
+
+            <!-- Watch Showcase button -->
+            ${data.showcaseVideoLink
+              ? `<p style="margin:0 0 16px 0;">
+                   <a href="${data.showcaseVideoLink}" target="_blank"
+                      style="display:inline-block;padding:8px 22px;background-color:${LIGHT_GREEN};
+                             color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:11px;
+                             font-weight:bold;text-decoration:none;border-radius:3px;
+                             mso-padding-alt:8px 22px;">Watch Showcase</a>
+                 </p>`
+              : `<p style="margin:0 0 16px 0;"></p>`}
+
+            <!-- showcase image -->
             <img src="${showcaseSrc}" alt="Showcase" width="556"
                  style="width:100%;max-width:556px;height:auto;display:block;border-radius:3px;">
+
           </td>
         </tr>
 
