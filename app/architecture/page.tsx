@@ -554,7 +554,7 @@ export default function ArchitecturePage() {
               ["Variables", "$FirstName, $LastName, $PolicyOwnerNumber, $ApplicationReference"],
               ["Theming", "11 color overrides applied at generation time via EmailTheme"],
               ["Live Editor", "WYSIWYG iframe + postMessage bridge; processMarkdown() renders formatting in preview; VisualTextInput in React modals"],
-              ["Pages", "/ (Builder), /live-editor, /architecture, /architecture/schema, /changelog"],
+              ["Pages", "/ (Builder), /live-editor, /architecture, /architecture/schema, /architecture/cms-integration, /changelog"],
             ].map(([label, desc]) => (
               <div key={label} className="flex gap-3">
                 <span className="text-[11px] font-bold shrink-0 w-24 text-right" style={{ color: "#0f172a" }}>{label}</span>
@@ -562,6 +562,24 @@ export default function ArchitecturePage() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Documentation Links */}
+        <div className="flex justify-center gap-6 mt-8 pt-6 border-t" style={{ borderColor: BORDER }}>
+          <a
+            href="/architecture/schema"
+            className="text-xs hover:underline"
+            style={{ color: ACCENT }}
+          >
+            View JSON Schema Documentation →
+          </a>
+          <a
+            href="/architecture/cms-integration"
+            className="text-xs hover:underline"
+            style={{ color: "#8b5cf6" }}
+          >
+            CMS Integration Theory →
+          </a>
         </div>
       </main>
     </div>

@@ -402,6 +402,254 @@ export default function SchemaPage() {
   }
 }`} />
 
+        {/* Schema to HTML Translation */}
+        <SectionLabel>Schema to HTML Translation</SectionLabel>
+        <p className="text-xs mb-4" style={{ color: MUTED }}>
+          Each component type is transformed into email-safe, table-based HTML by <code className="font-mono">email-html-generator.ts</code>. Below are examples showing the JSON input and resulting HTML output.
+        </p>
+
+        {/* Heading Example */}
+        <div className="rounded-lg border shadow-sm overflow-hidden mb-4" style={{ borderColor: BORDER, backgroundColor: BG_CARD }}>
+          <div className="px-5 py-3 flex items-center gap-2" style={{ backgroundColor: "#8b5cf6" }}>
+            <span className="text-sm font-bold text-white">heading</span>
+            <span className="text-[10px] text-white/70">H1-H4 with rich text support</span>
+          </div>
+          <div className="grid grid-cols-2 divide-x" style={{ borderColor: BORDER }}>
+            <div className="p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: MUTED }}>JSON Input</p>
+              <CodeBlock code={`{
+  "type": "heading",
+  "content": "Welcome, **$FirstName**!",
+  "props": { "level": 2 }
+}`} />
+            </div>
+            <div className="p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: MUTED }}>HTML Output</p>
+              <CodeBlock code={`<h2 style="margin:0;padding:0 0 12px 0;
+  font-size:20px;line-height:26px;
+  font-weight:bold;color:#333333;
+  font-family:Helvetica, Arial, sans-serif;">
+  Welcome, <strong>$FirstName</strong>!
+</h2>`} />
+            </div>
+          </div>
+        </div>
+
+        {/* Paragraph Example */}
+        <div className="rounded-lg border shadow-sm overflow-hidden mb-4" style={{ borderColor: BORDER, backgroundColor: BG_CARD }}>
+          <div className="px-5 py-3 flex items-center gap-2" style={{ backgroundColor: "#8b5cf6" }}>
+            <span className="text-sm font-bold text-white">paragraph</span>
+            <span className="text-[10px] text-white/70">Rich text, links, variables, line breaks</span>
+          </div>
+          <div className="grid grid-cols-2 divide-x" style={{ borderColor: BORDER }}>
+            <div className="p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: MUTED }}>JSON Input</p>
+              <CodeBlock code={`{
+  "type": "paragraph",
+  "content": "Click [link:abc] for *help*.\\nRef: $PolicyOwnerNumber",
+  "props": {
+    "links": [{
+      "id": "abc",
+      "text": "here",
+      "url": "https://help.example.com",
+      "linkType": "web"
+    }]
+  }
+}`} />
+            </div>
+            <div className="p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: MUTED }}>HTML Output</p>
+              <CodeBlock code={`<p style="margin:0;padding:0 0 12px 0;
+  font-size:14px;line-height:20px;
+  color:#333333;
+  font-family:Helvetica, Arial, sans-serif;">
+  Click <a href="https://help.example.com"
+    style="color:#1a73e8;text-decoration:underline;">
+    here</a> for <em>help</em>.<br>
+  Ref: $PolicyOwnerNumber
+</p>`} />
+            </div>
+          </div>
+        </div>
+
+        {/* Image Example */}
+        <div className="rounded-lg border shadow-sm overflow-hidden mb-4" style={{ borderColor: BORDER, backgroundColor: BG_CARD }}>
+          <div className="px-5 py-3 flex items-center gap-2" style={{ backgroundColor: "#8b5cf6" }}>
+            <span className="text-sm font-bold text-white">image</span>
+            <span className="text-[10px] text-white/70">Responsive table-wrapped image</span>
+          </div>
+          <div className="grid grid-cols-2 divide-x" style={{ borderColor: BORDER }}>
+            <div className="p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: MUTED }}>JSON Input</p>
+              <CodeBlock code={`{
+  "type": "image",
+  "content": "https://example.com/banner.png",
+  "props": {
+    "alt": "Welcome Banner",
+    "width": 560
+  }
+}`} />
+            </div>
+            <div className="p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: MUTED }}>HTML Output</p>
+              <CodeBlock code={`<table border="0" cellpadding="0" 
+  cellspacing="0" width="100%" 
+  style="padding:0 0 12px 0;">
+  <tr>
+    <td align="left">
+      <img border="0" 
+        style="display:block;max-width:100%;
+          height:auto;" 
+        src="https://example.com/banner.png" 
+        width="560" 
+        alt="Welcome Banner" />
+    </td>
+  </tr>
+</table>`} />
+            </div>
+          </div>
+        </div>
+
+        {/* List Example */}
+        <div className="rounded-lg border shadow-sm overflow-hidden mb-4" style={{ borderColor: BORDER, backgroundColor: BG_CARD }}>
+          <div className="px-5 py-3 flex items-center gap-2" style={{ backgroundColor: "#8b5cf6" }}>
+            <span className="text-sm font-bold text-white">list</span>
+            <span className="text-[10px] text-white/70">Unordered bullet list with rich text items</span>
+          </div>
+          <div className="grid grid-cols-2 divide-x" style={{ borderColor: BORDER }}>
+            <div className="p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: MUTED }}>JSON Input</p>
+              <CodeBlock code={`{
+  "type": "list",
+  "content": "",
+  "props": {
+    "items": [
+      "Complete your **profile**",
+      "Verify your *email*",
+      "Set up __two-factor auth__"
+    ]
+  }
+}`} />
+            </div>
+            <div className="p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: MUTED }}>HTML Output</p>
+              <CodeBlock code={`<table border="0" cellpadding="0" 
+  cellspacing="0" width="100%" 
+  style="padding:0 0 12px 0;">
+  <tr>
+    <td>
+      <ul style="margin:0;padding:0 0 0 24px;">
+        <li style="padding:2px 0;font-size:14px;
+          line-height:20px;color:#333333;">
+          Complete your <strong>profile</strong>
+        </li>
+        <li style="...">Verify your <em>email</em></li>
+        <li style="...">Set up <u>two-factor auth</u></li>
+      </ul>
+    </td>
+  </tr>
+</table>`} />
+            </div>
+          </div>
+        </div>
+
+        {/* Indent Example */}
+        <div className="rounded-lg border shadow-sm overflow-hidden mb-4" style={{ borderColor: BORDER, backgroundColor: BG_CARD }}>
+          <div className="px-5 py-3 flex items-center gap-2" style={{ backgroundColor: "#8b5cf6" }}>
+            <span className="text-sm font-bold text-white">indent</span>
+            <span className="text-[10px] text-white/70">Callout block with themed background</span>
+          </div>
+          <div className="grid grid-cols-2 divide-x" style={{ borderColor: BORDER }}>
+            <div className="p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: MUTED }}>JSON Input</p>
+              <CodeBlock code={`{
+  "type": "indent",
+  "content": "**Important:** Keep this reference\\nfor your records.",
+  "props": {}
+}`} />
+            </div>
+            <div className="p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: MUTED }}>HTML Output</p>
+              <CodeBlock code={`<table border="0" cellpadding="0" 
+  cellspacing="0" width="100%" 
+  style="margin:0 0 12px 0;">
+  <tr>
+    <td style="background-color:#f7f7f7;
+      border-radius:4px;padding:16px 20px;
+      font-size:14px;line-height:20px;
+      color:#333333;">
+      <strong>Important:</strong> Keep this 
+      reference<br>for your records.
+    </td>
+  </tr>
+</table>`} />
+            </div>
+          </div>
+        </div>
+
+        {/* HTML Example */}
+        <div className="rounded-lg border shadow-sm overflow-hidden mb-4" style={{ borderColor: BORDER, backgroundColor: BG_CARD }}>
+          <div className="px-5 py-3 flex items-center gap-2" style={{ backgroundColor: "#8b5cf6" }}>
+            <span className="text-sm font-bold text-white">html</span>
+            <span className="text-[10px] text-white/70">Raw HTML passthrough (no processing)</span>
+          </div>
+          <div className="grid grid-cols-2 divide-x" style={{ borderColor: BORDER }}>
+            <div className="p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: MUTED }}>JSON Input</p>
+              <CodeBlock code={`{
+  "type": "html",
+  "content": "<table><tr><td>Custom</td></tr></table>",
+  "props": {}
+}`} />
+            </div>
+            <div className="p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: MUTED }}>HTML Output</p>
+              <CodeBlock code={`<table><tr><td>Custom</td></tr></table>
+
+<!-- Injected exactly as-is. No escaping,
+     no wrapper, no styling applied. -->`} />
+            </div>
+          </div>
+        </div>
+
+        {/* Rich Text Processing */}
+        <div className="rounded-lg border shadow-sm overflow-hidden mb-4" style={{ borderColor: BORDER, backgroundColor: BG_CARD }}>
+          <div className="px-5 py-3" style={{ backgroundColor: "#0f172a" }}>
+            <span className="text-sm font-bold text-white">processRichContent() Pipeline</span>
+          </div>
+          <div className="p-4">
+            <p className="text-xs mb-3" style={{ color: MUTED }}>
+              The <code className="font-mono">processRichContent()</code> function in <code className="font-mono">email-html-generator.ts</code> transforms raw content strings into formatted HTML. Processing order matters:
+            </p>
+            <ol className="text-xs space-y-2" style={{ color: MUTED }}>
+              <li className="flex gap-2">
+                <span className="font-bold w-4 text-center" style={{ color: "#0f172a" }}>1</span>
+                <span><strong>Escape HTML</strong> — Convert &amp;, &lt;, &gt;, &quot; to entities (security)</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="font-bold w-4 text-center" style={{ color: "#0f172a" }}>2</span>
+                <span><strong>Replace link placeholders</strong> — <code>[link:id]</code> → <code>&lt;a href="..."&gt;text&lt;/a&gt;</code> using props.links array</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="font-bold w-4 text-center" style={{ color: "#0f172a" }}>3</span>
+                <span><strong>Bold</strong> — <code>**text**</code> → <code>&lt;strong&gt;text&lt;/strong&gt;</code></span>
+              </li>
+              <li className="flex gap-2">
+                <span className="font-bold w-4 text-center" style={{ color: "#0f172a" }}>4</span>
+                <span><strong>Underline</strong> — <code>__text__</code> → <code>&lt;u&gt;text&lt;/u&gt;</code></span>
+              </li>
+              <li className="flex gap-2">
+                <span className="font-bold w-4 text-center" style={{ color: "#0f172a" }}>5</span>
+                <span><strong>Italic</strong> — <code>*text*</code> → <code>&lt;em&gt;text&lt;/em&gt;</code> (processed last to avoid ** conflicts)</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="font-bold w-4 text-center" style={{ color: "#0f172a" }}>6</span>
+                <span><strong>Line breaks</strong> — <code>\n</code> → <code>&lt;br&gt;</code></span>
+              </li>
+            </ol>
+          </div>
+        </div>
+
         {/* Validation Rules */}
         <SectionLabel>Upload Validation Rules</SectionLabel>
         <div className="rounded-lg border shadow-sm overflow-hidden" style={{ borderColor: BORDER, backgroundColor: BG_CARD }}>
