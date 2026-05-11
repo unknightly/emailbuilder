@@ -153,9 +153,9 @@ export default function ArchitecturePage() {
             width="w-64"
           />
           <Box
-            title="app/live-editor/page.tsx"
-            subtitle="/live-editor -- WYSIWYG Editor"
-            items={["Renders <LiveEditorPage />", "Dynamic import (SSR disabled)"]}
+            title="app/preview/page.tsx"
+            subtitle="/preview -- HTML Entity Preview"
+            items={["Renders <PreviewClient />", "Dynamic import (SSR disabled)", "Paste HTML entities, see rendered output"]}
             color="#0f172a"
             width="w-64"
           />
@@ -243,19 +243,22 @@ export default function ArchitecturePage() {
                       "- HeadingEditor (H1-H4 + rich text)",
                       "- ParagraphEditor (rich text)",
                       "- Image (URL, alt, width)",
-                      "- List (dynamic items)",
-                      "- Indent (textarea)",
+                      "- List (dynamic items, VisualTextInput)",
+                      "- Indent (rich text)",
                       "- HTML (raw code)",
                       "",
                       "RichTextField toolbar:",
                       "  Bold / Italic / Underline",
-                      "  Link insert (web/email/tel)",
+                      "  Link button (inserts [text](url))",
                       "  Variable insert dropdown",
+                      "  MarkdownGuide popover (?)",
                       "",
                       "VisualTextInput (contentEditable):",
-                      "  Renders formatting visually in editor",
-                      "  Stores as markdown in state",
-                      "  Syncs only on external value change",
+                      "  Visual markdown rendering in editor",
+                      "  Grey mono markers for syntax tokens",
+                      "  Purple chips for $Variables",
+                      "  Stores raw markdown in state",
+                      "  Imperative handle: wrapSelection, insertText",
                       "",
                       "Kebab menu (sm) / inline btns (md+)",
                     ]}
@@ -350,7 +353,8 @@ export default function ArchitecturePage() {
                 "",
                 "processRichContent():",
                 "  **bold**, *italic*, __underline__",
-                "  [link:id] placeholders",
+                "  [link:id] placeholders (legacy)",
+                "  [text](url) standard markdown links",
                 "  \\n -> <br> line breaks",
                 "",
                 "Output: HTML 4.01 Transitional",
@@ -459,81 +463,6 @@ export default function ArchitecturePage() {
           </div>
         </div>
 
-        {/* Live Editor Architecture */}
-        <div className="mt-10">
-          <SectionLabel>Live Editor (WYSIWYG Mode)</SectionLabel>
-          <div className="flex justify-center items-start gap-6">
-            <Box
-              title="Left Pane: Entities Source"
-              subtitle="Editable textarea (HTML entities)"
-              items={[
-                "Displays HTML entity-encoded source",
-                "Editable -- changes sync to preview",
-                "Clear button in section header",
-                "Copy HTML button (entities)",
-              ]}
-              color="#0ea5e9"
-              width="w-64"
-            />
-
-            <div className="flex flex-col items-center justify-center self-stretch py-4">
-              <div className="flex items-center gap-1">
-                <Arrow direction="right" />
-                <span className="text-[9px]" style={{ color: MUTED }}>postMessage sync</span>
-                <Arrow direction="left" />
-              </div>
-            </div>
-
-            <Box
-              title="Right Pane: Interactive Preview"
-              subtitle="iframe with injected scripts"
-              items={[
-                "Rendered HTML with hover highlights",
-                "Blue outline on hover + type badge",
-                "Pencil edit icon opens React modal",
-                "'+' zones between components",
-                "",
-                "processMarkdown() on every update:",
-                "  **bold** -> <strong>",
-                "  *italic* -> <em>",
-                "  __underline__ -> <u>",
-                "  [link:id] -> <a href='...'> (from links[])",
-                "  \\n -> <br>",
-                "",
-                "Component type picker popup:",
-                "  Heading, Paragraph, Image, List",
-                "",
-                "Edit modal (React, in parent):",
-                "  VisualTextInput (WYSIWYG formatting)",
-                "  Link insert (web/email/tel) + LinksList",
-                "  Heading level selector (H1-H4)",
-                "  List item add/remove rows",
-                "  Image URL, alt text, width",
-                "  Variable insert dropdown",
-                "  Delete component button",
-              ]}
-              color="#0ea5e9"
-              width="w-72"
-            />
-          </div>
-          <div className="flex justify-center mt-4">
-            <Box
-              title="Communication Protocol"
-              subtitle="window.postMessage bidirectional"
-              items={[
-                "iframe -> parent: v0-live-editor-sync (HTML source changes)",
-                "iframe -> parent: v0-open-modal (edit/add component requests)",
-                "parent -> iframe: v0-update-component (modal save -- update existing)",
-                "parent -> iframe: v0-add-component (modal save -- insert new)",
-                "Entity encode/decode: pure string replacement (SSR-safe)",
-                "Links passed as JSON array alongside content string",
-              ]}
-              color="#64748b"
-              width="w-[520px]"
-            />
-          </div>
-        </div>
-
         {/* Key Features Summary */}
         <div className="mt-10">
           <SectionLabel>Key Characteristics</SectionLabel>
@@ -548,13 +477,14 @@ export default function ArchitecturePage() {
               ["Email Output", "HTML 4.01 Transitional, table-based, inline styles, 600px container"],
               ["Compatibility", "Outlook, Gmail, Apple Mail, Yahoo -- full email-client CSS resets"],
               ["State", "React useState -- ephemeral, no persistence layer"],
-              ["Persistence", "JSON file download/upload (user-managed)"],
+              ["Persistence", "JSON file download/upload (user-managed) via File dropdown in preview panel"],
               ["Auth", "sessionStorage password gate (AGILE2026) in AuthGate wrapping layout.tsx"],
-              ["Rich Text", "Stored as markdown syntax; rendered visually via VisualTextInput (contentEditable) in editors and via processRichContent() in HTML output"],
+              ["Rich Text", "Stored as markdown; rendered visually in editor (grey mono markers); converted to HTML via processRichContent() at generation time"],
+              ["Links", "Standard markdown [text](url) syntax; mailto: and tel: supported inline"],
               ["Variables", "$FirstName, $LastName, $PolicyOwnerNumber, $ApplicationReference"],
               ["Theming", "11 color overrides applied at generation time via EmailTheme"],
-              ["Live Editor", "WYSIWYG iframe + postMessage bridge; processMarkdown() renders formatting in preview; VisualTextInput in React modals"],
-              ["Pages", "/ (Builder), /live-editor, /architecture, /architecture/schema, /architecture/cms-integration, /changelog"],
+              ["HTML Preview", "Standalone /preview page: paste HTML entities, see rendered output in real time"],
+              ["Pages", "/ (Builder), /preview, /architecture, /architecture/schema, /architecture/cms-integration, /changelog"],
             ].map(([label, desc]) => (
               <div key={label} className="flex gap-3">
                 <span className="text-[11px] font-bold shrink-0 w-24 text-right" style={{ color: "#0f172a" }}>{label}</span>

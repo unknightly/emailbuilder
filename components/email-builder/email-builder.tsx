@@ -22,7 +22,8 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable"
-import { Download, Upload } from "lucide-react"
+
+import { Download } from "lucide-react"
 import { AppHeader } from "./app-header"
 
 export function EmailBuilder() {
@@ -151,28 +152,7 @@ export function EmailBuilder() {
         onChange={handleUpload}
       />
 
-      <AppHeader currentPath="/">
-        <div className="ml-auto flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs gap-1.5"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Upload className="h-3.5 w-3.5" />
-            Upload
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs gap-1.5"
-            onClick={openDownloadDialog}
-          >
-            <Download className="h-3.5 w-3.5" />
-            Download
-          </Button>
-        </div>
-      </AppHeader>
+      <AppHeader currentPath="/" />
 
       {/* Download dialog */}
       <Dialog open={downloadDialogOpen} onOpenChange={setDownloadDialogOpen}>
@@ -224,7 +204,11 @@ export function EmailBuilder() {
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={58} minSize={30} id="preview-panel">
-            <PreviewPanel html={html} />
+            <PreviewPanel
+              html={html}
+              onUpload={() => fileInputRef.current?.click()}
+              onDownload={openDownloadDialog}
+            />
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
