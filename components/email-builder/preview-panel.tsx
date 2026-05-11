@@ -3,13 +3,21 @@
 import { useState, useCallback, useMemo } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Eye, Code, Copy, Check, Braces } from "lucide-react"
+import { Eye, Code, Copy, Check, Braces, ChevronDown, Upload, Download } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface PreviewPanelProps {
   html: string
+  onUpload?: () => void
+  onDownload?: () => void
 }
 
-export function PreviewPanel({ html }: PreviewPanelProps) {
+export function PreviewPanel({ html, onUpload, onDownload }: PreviewPanelProps) {
   const [copied, setCopied] = useState(false)
   const [copiedEntities, setCopiedEntities] = useState(false)
 
@@ -60,7 +68,7 @@ export function PreviewPanel({ html }: PreviewPanelProps) {
   return (
     <div className="flex h-full flex-col">
       <Tabs defaultValue="preview" className="flex h-full flex-col">
-        <div className="flex items-center justify-between border-b px-4 py-2">
+        <div className="flex items-center gap-2 border-b px-4 py-2">
           <TabsList className="h-8">
             <TabsTrigger value="preview" className="text-xs gap-1.5 px-3">
               <Eye className="h-3.5 w-3.5" />
@@ -75,6 +83,31 @@ export function PreviewPanel({ html }: PreviewPanelProps) {
               Entities
             </TabsTrigger>
           </TabsList>
+
+          {(onUpload || onDownload) && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 ml-auto">
+                  File
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                {onUpload && (
+                  <DropdownMenuItem onClick={onUpload} className="text-xs gap-2">
+                    <Upload className="h-3.5 w-3.5" />
+                    Upload JSON
+                  </DropdownMenuItem>
+                )}
+                {onDownload && (
+                  <DropdownMenuItem onClick={onDownload} className="text-xs gap-2">
+                    <Download className="h-3.5 w-3.5" />
+                    Download JSON
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         <TabsContent value="preview" className="flex-1 m-0 overflow-hidden">
