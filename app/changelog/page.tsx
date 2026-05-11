@@ -31,6 +31,27 @@ interface ChangelogRelease {
 
 const CHANGELOG: ChangelogRelease[] = [
   {
+    version: "2.0.0",
+    date: "May 11, 2026",
+    title: "Markdown-First Editing + HTML Preview",
+    changes: [
+      { type: "added", description: "VisualTextInput now renders markdown syntax with grey monospace markers (**bold**, *italic*, __underline__) visible while typing" },
+      { type: "added", description: "Standard markdown link syntax [text](url) supported in all rich text fields — mailto: and tel: schemes also work inline" },
+      { type: "changed", description: "Link button in toolbar simplified: inserts [link text](https://) placeholder at cursor instead of opening an InlineLinkCreator form" },
+      { type: "removed", description: "InlineLinkCreator, LinksList, and useRichText hook removed — links are now written directly as markdown" },
+      { type: "removed", description: "Email and telephone link type pickers removed from UI; use mailto: and tel: in markdown syntax instead" },
+      { type: "added", description: "MarkdownGuide popover (?) added to all rich text toolbars explaining all supported syntax including link examples" },
+      { type: "added", description: "HTML Preview page (/preview): paste HTML entity-encoded content into left pane, see live rendered output in right pane" },
+      { type: "changed", description: "File dropdown (Upload / Download JSON) moved into the preview panel tab bar, inline with Preview / HTML / Entities tabs" },
+      { type: "removed", description: "Upload and Download buttons removed from app header" },
+      { type: "removed", description: "Live Editor removed from navigation menu" },
+      { type: "changed", description: "Architecture diagram updated: Live Editor section removed, HTML Preview page added, ComponentEditor and data flow descriptions updated" },
+      { type: "changed", description: "JSON Schema page updated: markdown link syntax added to rich text table, JSON example updated to use [text](url), ParagraphLink marked as legacy" },
+      { type: "fixed", description: "Input component missing from component-editor.tsx imports after cleanup — caused image editor crash" },
+      { type: "fixed", description: "escapeHtml defined inside VisualTextInput component body causing stale useCallback closure — moved to module scope" },
+    ],
+  },
+  {
     version: "1.5.0",
     date: "February 15, 2026",
     title: "Changelog + Architecture Updates",
@@ -100,7 +121,7 @@ const CHANGELOG: ChangelogRelease[] = [
       { type: "added", description: "Split-pane email template builder with resizable panels" },
       { type: "added", description: "6 component types: Heading, Paragraph, Image, List, Indent Block, Raw HTML" },
       { type: "added", description: "Rich text editing with Bold, Italic, Underline formatting" },
-      { type: "added", description: "Link insertion supporting web URLs, email addresses, and telephone numbers" },
+      { type: "added", description: "Link insertion via InlineLinkCreator (web URLs, email addresses, telephone numbers) — later replaced by markdown syntax in v2.0.0" },
       { type: "added", description: "Template variable system: $FirstName, $LastName, $PolicyOwnerNumber, $ApplicationReference" },
       { type: "added", description: "Theme editor with 11 color properties grouped by Background, Text, and Other" },
       { type: "added", description: "3-tab preview panel: rendered Preview, raw HTML, and HTML Entities" },

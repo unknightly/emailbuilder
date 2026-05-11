@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import { AppHeader } from "@/components/email-builder/app-header"
-import { VisualTextInput } from "@/components/email-builder/visual-text-input"
+import { VisualTextInput, type VisualTextInputHandle } from "@/components/email-builder/visual-text-input"
+import { MarkdownGuide } from "@/components/email-builder/markdown-guide"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -706,6 +707,7 @@ export default function LiveEditorPage() {
   // Modal state
   const [modal, setModal] = useState<ModalState | null>(null)
   const [showLinkCreator, setShowLinkCreator] = useState(false)
+  const visualInputRef = useRef<VisualTextInputHandle>(null)
 
   const decodedHtml = useMemo(() => decodeEntities(entitiesCode), [entitiesCode])
   const iframeSrcDoc = useMemo(() => buildInteractiveDoc(decodedHtml), [decodedHtml])
@@ -786,90 +788,6 @@ export default function LiveEditorPage() {
     setModal(null)
   }, [modal, sendToIframe])
 
-  // Text formatting helpers
-  const wrapSelection = useCallback(
-    (prefix: string, suffix: string) => {
-      if (!modal) return
-      
-      // Get current selection from the window
-      const selection = window.getSelection()
-      if (!selection || selection.rangeCount === 0) {
-        // No selection - just add to end
-        const newContent = modal.content + prefix + suffix
-        setModal({ ...modal, content: newContent })
-        return
-      }
-      
-      const selectedText = selection.toString()
-      if (!selectedText) {
-        // Empty selection - add at cursor
-        const newContent = modal.content + prefix + suffix
-        setModal({ ...modal, content: newContent })
-        return
-      }
-      
-      // Find where in the content the selected text is
-      const text = modal.content
-      const selectionStart = text.indexOf(selectedText)
-      
-      if (selectionStart === -1) {
-        // Selected text not found in content - append
-        const newContent = text + prefix + selectedText + suffix
-        setModal({ ...modal, content: newContent })
-        return
-      }
-      
-      const selectionEnd = selectionStart + selectedText.length
-      
-      // Check if already wrapped (toggle behavior)
-      const before = text.slice(Math.max(0, selectionStart - prefix.length), selectionStart)
-      const after = text.slice(selectionEnd, selectionEnd + suffix.length)
-      
-      if (before === prefix && after === suffix) {
-        // Remove wrapping
-        const newContent = text.slice(0, selectionStart - prefix.length) + selectedText + text.slice(selectionEnd + suffix.length)
-        setModal({ ...modal, content: newContent })
-      } else {
-        // Add wrapping
-        const wrapped = prefix + selectedText + suffix
-        const newContent = text.slice(0, selectionStart) + wrapped + text.slice(selectionEnd)
-        setModal({ ...modal, content: newContent })
-      }
-    },
-    [modal]
-  )
-
-  const insertVariable = useCallback(
-    (v: string) => {
-      if (!modal) return
-      
-      // Get current selection
-      const selection = window.getSelection()
-      if (selection && selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0)
-        const selectedText = selection.toString()
-        
-        if (selectedText) {
-          // Replace selection with variable
-          const text = modal.content
-          const selectionStart = text.indexOf(selectedText)
-          
-          if (selectionStart !== -1) {
-            const selectionEnd = selectionStart + selectedText.length
-            const newContent = text.slice(0, selectionStart) + v + text.slice(selectionEnd)
-            setModal({ ...modal, content: newContent })
-            return
-          }
-        }
-      }
-      
-      // No selection - append to end
-      const newContent = modal.content + v
-      setModal({ ...modal, content: newContent })
-    },
-    [modal]
-  )
-
   const copyToClipboard = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(decodedHtml)
@@ -949,14 +867,17 @@ export default function LiveEditorPage() {
             {modal?.type === "paragraph" && (
               <div className="flex flex-col gap-0">
                 <div className="flex items-center border rounded-t-md bg-muted/40 px-1.5 py-1 gap-px">
-                  <button type="button" title="Bold" onClick={() => wrapSelection("**", "**")} className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                  <button type="button" title="Bold" onClick={() => visualInputRef.current?.wrapSelection("**", "**")} className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
                     <Bold className="h-3.5 w-3.5" />
+                    <span className="sr-only">Bold</span>
                   </button>
-                  <button type="button" title="Italic" onClick={() => wrapSelection("*", "*")} className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                  <button type="button" title="Italic" onClick={() => visualInputRef.current?.wrapSelection("*", "*")} className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
                     <Italic className="h-3.5 w-3.5" />
+                    <span className="sr-only">Italic</span>
                   </button>
-                  <button type="button" title="Underline" onClick={() => wrapSelection("__", "__")} className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                  <button type="button" title="Underline" onClick={() => visualInputRef.current?.wrapSelection("__", "__")} className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
                     <Underline className="h-3.5 w-3.5" />
+                    <span className="sr-only">Underline</span>
                   </button>
                   <div className="w-px h-4 bg-border mx-1" />
                   <button
@@ -965,46 +886,53 @@ export default function LiveEditorPage() {
                     onClick={() => setShowLinkCreator(!showLinkCreator)}
                     className={`inline-flex items-center justify-center rounded h-7 w-7 transition-colors ${
                       showLinkCreator
-                        ? "bg-primary text-primary-foreground"
+                        ? "bg-foreground text-background"
                         : "text-muted-foreground hover:text-foreground hover:bg-accent"
                     }`}
                   >
                     <Link2 className="h-3.5 w-3.5" />
+                    <span className="sr-only">Insert link</span>
                   </button>
                   <div className="w-px h-4 bg-border mx-1" />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button type="button" title="Insert variable" className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
                         <Braces className="h-3.5 w-3.5" />
+                        <span className="sr-only">Insert variable</span>
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="w-48">
                       {TEMPLATE_VARIABLES.map((v) => (
-                        <DropdownMenuItem key={v} onClick={() => insertVariable(v)} className="font-mono text-xs">
+                        <DropdownMenuItem key={v} onClick={() => visualInputRef.current?.insertText(v)} className="font-mono text-xs">
                           {v}
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
+                  <div className="w-px h-4 bg-border mx-1" />
+                  <MarkdownGuide />
                 </div>
                 {showLinkCreator ? (
                   <InlineLinkCreator
                     onAdd={(link) => {
                       const newLinks = [...(modal.links || []), link]
-                      const newContent = modal.content + `[link:${link.id}]`
-                      setModal({ ...modal, content: newContent, links: newLinks })
+                      setModal({ ...modal, links: newLinks })
                       setShowLinkCreator(false)
+                      // Insert placeholder via ref so cursor position is respected
+                      setTimeout(() => visualInputRef.current?.insertText(`[link:${link.id}]`), 0)
                     }}
                     onCancel={() => setShowLinkCreator(false)}
                   />
                 ) : (
                   <div className="border rounded-b-md border-t-0 px-3 py-2">
                     <VisualTextInput
+                      ref={visualInputRef}
                       value={modal.content}
                       onChange={(newValue) => setModal({ ...modal, content: newValue })}
                       placeholder="Enter paragraph text... (use Enter for line breaks)"
                       multiline={true}
                       links={modal.links || []}
+                      rawMarkdown
                     />
                   </div>
                 )}
@@ -1040,27 +968,45 @@ export default function LiveEditorPage() {
                 </div>
                 <div className="flex flex-col gap-0">
                   <div className="flex items-center border rounded-t-md bg-muted/40 px-1.5 py-1 gap-px">
+                    <button type="button" title="Bold" onClick={() => visualInputRef.current?.wrapSelection("**", "**")} className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                      <Bold className="h-3.5 w-3.5" />
+                      <span className="sr-only">Bold</span>
+                    </button>
+                    <button type="button" title="Italic" onClick={() => visualInputRef.current?.wrapSelection("*", "*")} className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                      <Italic className="h-3.5 w-3.5" />
+                      <span className="sr-only">Italic</span>
+                    </button>
+                    <button type="button" title="Underline" onClick={() => visualInputRef.current?.wrapSelection("__", "__")} className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                      <Underline className="h-3.5 w-3.5" />
+                      <span className="sr-only">Underline</span>
+                    </button>
+                    <div className="w-px h-4 bg-border mx-1" />
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button type="button" title="Insert variable" className="inline-flex items-center justify-center rounded h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
                           <Braces className="h-3.5 w-3.5" />
+                          <span className="sr-only">Insert variable</span>
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="w-48">
                         {TEMPLATE_VARIABLES.map((v) => (
-                          <DropdownMenuItem key={v} onClick={() => insertVariable(v)} className="font-mono text-xs">
+                          <DropdownMenuItem key={v} onClick={() => visualInputRef.current?.insertText(v)} className="font-mono text-xs">
                             {v}
                           </DropdownMenuItem>
                         ))}
                       </DropdownMenuContent>
                     </DropdownMenu>
+                    <div className="w-px h-4 bg-border mx-1" />
+                    <MarkdownGuide />
                   </div>
                   <div className="border rounded-b-md border-t-0 px-3 py-2">
                     <VisualTextInput
+                      ref={visualInputRef}
                       value={modal.content}
                       onChange={(newValue) => setModal({ ...modal, content: newValue })}
                       placeholder="Heading text..."
                       multiline={false}
+                      rawMarkdown
                     />
                   </div>
                 </div>
@@ -1095,18 +1041,21 @@ export default function LiveEditorPage() {
               <div className="flex flex-col gap-2">
                 <Label className="text-xs font-medium">List items</Label>
                 {modal.items?.map((item, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground w-4 text-right shrink-0">{i + 1}.</span>
-                    <Input
-                      value={item}
-                      onChange={(e) => {
-                        const items = [...(modal.items || [])]
-                        items[i] = e.target.value
-                        setModal({ ...modal, items })
-                      }}
-                      className="h-8 text-sm flex-1"
-                      placeholder="Item text..."
-                    />
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="text-xs text-muted-foreground w-4 text-right shrink-0 mt-1.5">{i + 1}.</span>
+                    <div className="flex-1 border rounded-md px-2.5 py-1.5 bg-background focus-within:ring-1 focus-within:ring-ring">
+                      <VisualTextInput
+                        value={item}
+                        onChange={(v) => {
+                          const items = [...(modal.items || [])]
+                          items[i] = v
+                          setModal({ ...modal, items })
+                        }}
+                        placeholder="Item text..."
+                        multiline={false}
+                        rawMarkdown
+                      />
+                    </div>
                     <Button
                       variant="ghost"
                       size="icon"

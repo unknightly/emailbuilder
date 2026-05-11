@@ -219,12 +219,15 @@ export default function SchemaPage() {
         </div>
 
         {/* ParagraphLink */}
-        <SectionLabel>ParagraphLink</SectionLabel>
-        <SchemaCard title="ParagraphLink" description="Defines an inline hyperlink used inside heading or paragraph components. Referenced by [link:id] in content." color="#10b981">
+        <SectionLabel>ParagraphLink (Legacy)</SectionLabel>
+        <p className="text-xs mb-4" style={{ color: MUTED }}>
+          Links are now written using standard markdown syntax <code className="font-mono">{"[text](url)"}</code> directly in content strings. The <code className="font-mono">ParagraphLink</code> object and <code className="font-mono">props.links</code> array remain supported for backward compatibility with uploaded templates.
+        </p>
+        <SchemaCard title="ParagraphLink" description="Legacy link object. Referenced by [link:id] placeholder in content. New templates should use [text](url) markdown syntax instead." color="#10b981">
           <SchemaField name="id" type="string" description="Unique identifier matching the [link:id] placeholder in the parent component's content." />
           <SchemaField name="text" type="string" description="The visible display text rendered inside the <a> tag." />
-          <SchemaField name="url" type="string" description="The destination. For web: full URL. For email: address only (mailto: prefix is added). For telephone: number (tel: prefix is added)." />
-          <SchemaField name="linkType" type="enum" description="Determines the URL prefix and input validation." enumValues={["web", "email", "telephone"]} />
+          <SchemaField name="url" type="string" description="The destination URL." />
+          <SchemaField name="linkType" type="enum" description="Determines the URL prefix applied during HTML generation." enumValues={["web", "email", "telephone"]} />
         </SchemaCard>
 
         {/* EmailTheme */}
@@ -287,7 +290,10 @@ export default function SchemaPage() {
                   { syntax: "**text**", output: "<strong>text</strong>", desc: "Bold text" },
                   { syntax: "*text*", output: "<em>text</em>", desc: "Italic text" },
                   { syntax: "__text__", output: "<u>text</u>", desc: "Underlined text" },
-                  { syntax: "[link:abc123]", output: '<a href="...">Display Text</a>', desc: "Inline hyperlink (resolved from props.links array)" },
+                  { syntax: "[text](https://url)", output: '<a href="https://url">text</a>', desc: "Standard markdown hyperlink (web)" },
+                  { syntax: "[text](mailto:a@b.com)", output: '<a href="mailto:a@b.com">text</a>', desc: "Email link" },
+                  { syntax: "[text](tel:+61400000)", output: '<a href="tel:+61400000">text</a>', desc: "Telephone link" },
+                  { syntax: "[link:abc123]", output: '<a href="...">Display Text</a>', desc: "Legacy link placeholder (resolved from props.links array)" },
                   { syntax: "\\n", output: "<br>", desc: "Line break" },
                   { syntax: "$FirstName", output: "$FirstName", desc: "Variable (passed through as-is for mail-merge)" },
                 ].map((r) => (
@@ -346,17 +352,8 @@ export default function SchemaPage() {
         {
           "id": "u1v2w3x4",
           "type": "paragraph",
-          "content": "Please visit our **support portal** for more information.",
-          "props": {
-            "links": [
-              {
-                "id": "y5z6a7b8",
-                "text": "support portal",
-                "url": "https://support.example.com",
-                "linkType": "web"
-              }
-            ]
-          }
+          "content": "Please visit our [support portal](https://support.example.com) for more information.",
+          "props": {}
         },
         {
           "id": "c9d0e1f2",
