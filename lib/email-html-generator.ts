@@ -41,13 +41,22 @@ function buildLinkHref(link: ParagraphLink): string {
 function processRichContent(content: string, links: ParagraphLink[], theme: EmailTheme): string {
   let processed = escapeHtml(content)
 
-  // Replace link placeholders
+  // Replace [link:id] placeholders (toolbar-inserted links)
   for (const link of links) {
     const placeholder = escapeHtml(`[link:${link.id}]`)
     const href = escapeHtml(buildLinkHref(link))
     const linkHtml = `<a href="${href}" style="color:${theme.linkColor};text-decoration:underline;">${escapeHtml(link.text)}</a>`
     processed = processed.replace(placeholder, linkHtml)
   }
+
+  // Replace standard markdown links  [text](url)
+  processed = processed.replace(
+    /\[([^\]]+)\]\(([^)]+)\)/g,
+    (_, text, url) => {
+      const href = escapeHtml(url.startsWith("http") ? url : `https://${url}`)
+      return `<a href="${href}" style="color:${theme.linkColor};text-decoration:underline;">${escapeHtml(text)}</a>`
+    }
+  )
 
   // Inline formatting: bold **text**, italic *text*, underline __text__
   // Process bold first (** before *), then underline, then italic
