@@ -18,8 +18,6 @@ A client-side email template builder that outputs table-based HTML compatible wi
 pnpm dev
 ```
 
-Password gate: `AGILE2026` (stored in `sessionStorage`).
-
 ## Stack
 
 - **Next.js 16** (App Router, Turbopack)
@@ -40,7 +38,6 @@ app/
   live-editor/                # Unused — kept for reference
 
 components/
-  auth-gate.tsx               # Session-based password gate
   email-builder/
     email-builder.tsx         # Root builder component
     builder-panel.tsx         # Left panel — component list and section management

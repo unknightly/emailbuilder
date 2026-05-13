@@ -121,27 +121,6 @@ export default function ArchitecturePage() {
 
       <main className="px-8 py-10 max-w-6xl mx-auto">
 
-        {/* Auth Gate */}
-        <SectionLabel>Auth Gate</SectionLabel>
-        <div className="flex justify-center mb-2">
-          <Box
-            title="AuthGate"
-            subtitle="components/auth-gate.tsx -- wraps entire app"
-            items={[
-              "Mounted in app/layout.tsx around {children}",
-              "Checks sessionStorage for 'agile2026-auth' key",
-              "Shows password screen until correct password entered",
-              "Password: AGILE2026 (hardcoded, client-side only)",
-              "Session persists until browser tab is closed",
-            ]}
-            color="#dc2626"
-            width="w-[420px]"
-          />
-        </div>
-        <div className="flex justify-center">
-          <Arrow label="wraps" />
-        </div>
-
         {/* Layer 1: Entry Points */}
         <SectionLabel>Entry Points (Pages)</SectionLabel>
         <div className="flex justify-center gap-6 mb-2">
@@ -478,7 +457,6 @@ export default function ArchitecturePage() {
               ["Compatibility", "Outlook, Gmail, Apple Mail, Yahoo -- full email-client CSS resets"],
               ["State", "React useState -- ephemeral, no persistence layer"],
               ["Persistence", "JSON file download/upload (user-managed) via File dropdown in preview panel"],
-              ["Auth", "sessionStorage password gate (AGILE2026) in AuthGate wrapping layout.tsx"],
               ["Rich Text", "Stored as markdown; rendered visually in editor (grey mono markers); converted to HTML via processRichContent() at generation time"],
               ["Links", "Standard markdown [text](url) syntax; mailto: and tel: supported inline"],
               ["Variables", "$FirstName, $LastName, $PolicyOwnerNumber, $ApplicationReference"],
